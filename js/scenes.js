@@ -63,6 +63,7 @@ const SCENES = {
      EP.0 — OVERCAST / THE BEGINNING
      ========================================================= */
   ep0_overcast: {
+    video: "overcast",
     type: "broadcast",
     title: "OVERCAST",
     label: "PRE-MANDELA // CLASSIFIED REEL",
@@ -75,6 +76,7 @@ const SCENES = {
   },
 
   ep0_message: {
+    video: "overcast",
     type: "story",
     title: "ПОСЛАНИЕ",
     channel: "CH-01",
@@ -155,6 +157,7 @@ const SCENES = {
      EP.1 — VOL.1 / MARK & CESAR
      ========================================================= */
   ep1_cold: {
+    video: "house",
     type: "broadcast",
     title: "MANDELA CATALOGUE — VOL.1",
     label: "MCPD EVIDENCE // TAPE A",
@@ -167,6 +170,7 @@ const SCENES = {
   },
 
   ep1_phone: {
+    video: "static_night",
     type: "phone",
     title: "ЗВОНОК // CESAR TORRES",
     from: "CESAR TORRES → MARK HEATHCLIFF",
@@ -273,6 +277,7 @@ const SCENES = {
   },
 
   ep1_open: {
+    video: "house",
     type: "story",
     title: "ДВЕРЬ ОТКРЫТА",
     channel: "CH-07",
@@ -301,6 +306,7 @@ const SCENES = {
   },
 
   ep1_terror: {
+    video: "terror",
     type: "story",
     title: "Я ХОЧУ ПРОСНУТЬСЯ",
     channel: "CH-07",
@@ -343,6 +349,7 @@ const SCENES = {
   },
 
   ep1_aps: {
+    video: "watcher",
     type: "broadcast",
     title: "APS — ЧТО ТАКОЕ АЛЬТЕРНАТ",
     label: "US DEPT. // PUBLIC SAFETY TAPE",
@@ -418,6 +425,7 @@ const SCENES = {
      EP.2 — VOL.2 / ADAM & JONAH
      ========================================================= */
   ep2_intro: {
+    video: "radio_room",
     type: "broadcast",
     title: "MANDELA CATALOGUE — VOL.2",
     label: "BYTHORNE PARANORMAL SOCIETY",
@@ -458,6 +466,7 @@ const SCENES = {
   },
 
   ep2_choose: {
+    video: "radio_room",
     type: "story",
     title: "ЧЬИМИ ГЛАЗАМИ",
     channel: "CH-09",
@@ -510,6 +519,7 @@ const SCENES = {
   },
 
   ep2_house: {
+    video: "corridor",
     type: "story",
     title: "ДОМ",
     channel: "CH-09",
@@ -553,6 +563,7 @@ const SCENES = {
   },
 
   ep2_split: {
+    video: "corridor",
     type: "story",
     title: "РАЗДЕЛЕНИЕ",
     channel: "CH-09",
@@ -626,6 +637,7 @@ const SCENES = {
   },
 
   ep2_film: {
+    video: "watcher",
     type: "story",
     title: "ДОКАЗАТЕЛЬСТВО ЦЕНОЙ УМА",
     channel: "CH-09",
@@ -691,6 +703,7 @@ const SCENES = {
      EP.3 — AFTERMATH / FALL OF MANDELA
      ========================================================= */
   ep3_intro: {
+    video: "fog",
     type: "broadcast",
     title: "ПОСЛЕ КАТАЛОГА",
     label: "MANDELA COUNTY // COLLAPSE TIMELINE",
@@ -764,6 +777,7 @@ const SCENES = {
   },
 
   ep3_truth: {
+    video: "collapse",
     type: "story",
     title: "ПРАВДА НА ВОЗДУХЕ",
     channel: "CH-13",
@@ -785,6 +799,7 @@ const SCENES = {
   },
 
   ep3_sarah: {
+    video: "fog",
     type: "story",
     title: "САРА",
     channel: "CH-13",
@@ -860,6 +875,7 @@ const SCENES = {
   },
 
   ep3_collapse: {
+    video: "end",
     type: "story",
     title: "ОКРУГ МАНДЕЛА",
     channel: "CH-13",
