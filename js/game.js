@@ -112,6 +112,10 @@
       clampParanoia();
     }
     if (typeof scene.score === "number") state.score += scene.score;
+    if (scene.flags) {
+      Object.assign(state.flags, scene.flags);
+      if (scene.flags.role) state.role = scene.flags.role;
+    }
     if (scene.unlock) unlockChars(scene.unlock);
     if (scene.character) unlockChars([scene.character]);
 
@@ -149,19 +153,18 @@
         <p class="kicker">Full Plot Adaptation // Tribute</p>
         <h1 class="hero-brand"><span>MANDELA COUNTY</span>КАТАЛОГ<br/>МАНДЕЛЫ</h1>
         <p class="lead">
-          Полный сюжет: Overcast → Vol.1 (Марк и Сезар) → Vol.2 (Адам и Джона) → падение округа.
-          Вы — оператор архива. Не смотрите дольше, чем нужно.
+          Сюжет идёт через обязательные протоколы: чтобы открыть следующую кассету,
+          нужно пройти мини-игру (взгляд, голос, дверь, рация, каталог…).
         </p>
         <div class="actions">
           <button class="primary" id="btn-start" type="button">▶ ПОЛНЫЙ СЮЖЕТ</button>
           <button id="btn-episodes" type="button">ЭПИЗОДЫ</button>
-          <button id="btn-arcade" type="button">МИНИ-ИГРЫ</button>
           <button id="btn-catalog" type="button">КАТАЛОГ ЛИЦ</button>
           <button id="btn-mute" type="button">ЗВУК: ВКЛ</button>
         </div>
         <div class="log">
-          Сюжет + мини-игры: не смотри в глаза, голос-подмена, дверь, память каталога, рация, тест APS.
-          Трибьют The Mandela Catalogue. Звуки — Web Audio.
+          Мини-игры — не отдельный режим, а ворота сюжета. Провал меняет исход; часть протоколов нельзя пропустить.
+          Трибьют The Mandela Catalogue.
         </div>
       </section>
     `;
@@ -179,13 +182,6 @@
       state.startedAt = Date.now();
       ArchiveAudio.play("tape");
       go("episode_select");
-    };
-
-    document.getElementById("btn-arcade").onclick = async () => {
-      await ArchiveAudio.start();
-      state.startedAt = Date.now();
-      ArchiveAudio.play("emergency");
-      go("arcade");
     };
 
     document.getElementById("btn-catalog").onclick = async () => {
@@ -463,7 +459,8 @@
       Effects.glitchBurst(300);
       state.score += 1;
       state.faceStreak += 1;
-      log.textContent = "ВЕРНО. Аномалия изъята из каталога.";
+      state.flags.minigamesWon = (state.flags.minigamesWon || 0) + 1;
+      log.textContent = "ВЕРНО. ПРОТОКОЛ ПРОЙДЕН — СЮЖЕТ ДАЛЬШЕ.";
       setTimeout(() => go(scene.nextCorrect), 900);
     } else {
       btn.style.borderColor = "var(--danger)";
@@ -472,10 +469,16 @@
       state.paranoia += 1;
       state.score -= 1;
       state.faceStreak = 0;
+      state.flags.minigamesLost = (state.flags.minigamesLost || 0) + 1;
       clampParanoia();
       updateHud();
-      log.textContent = "ОШИБКА. Вы оставили Альтерната в файле.";
-      setTimeout(() => go(scene.nextWrong), 1100);
+      if (scene.retryOnFail) {
+        log.textContent = "ОШИБКА. ПОВТОРИТЕ СВЕРКУ — БЕЗ НЕЁ СЮЖЕТ НЕ ИДЁТ.";
+        setTimeout(() => go(state.scene), 1100);
+      } else {
+        log.textContent = "ОШИБКА. Альтернат остался в файле — сюжет идёт хуже.";
+        setTimeout(() => go(scene.nextWrong), 1100);
+      }
     }
   }
 
@@ -516,7 +519,6 @@
         <div class="actions">
           <button class="primary" id="btn-restart" type="button">ПЕРЕМОТАТЬ КАССЕТУ</button>
           <button id="btn-end-episodes" type="button">ЭПИЗОДЫ</button>
-          <button id="btn-end-arcade" type="button">МИНИ-ИГРЫ</button>
           <button id="btn-end-catalog" type="button">КАТАЛОГ ЛИЦ</button>
           <button id="btn-mute-end" type="button">${ArchiveAudio.muted ? "ЗВУК: ВЫКЛ" : "ЗВУК: ВКЛ"}</button>
         </div>
@@ -549,7 +551,6 @@
     };
 
     document.getElementById("btn-end-episodes").onclick = () => go("episode_select");
-    document.getElementById("btn-end-arcade").onclick = () => go("arcade");
 
     document.getElementById("btn-mute-end").onclick = (e) => {
       const muted = ArchiveAudio.toggleMute();

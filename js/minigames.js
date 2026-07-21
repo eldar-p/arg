@@ -74,7 +74,7 @@ const MiniGames = (() => {
       api.state.flags.minigamesWon = (api.state.flags.minigamesWon || 0) + 1;
       ArchiveAudio.beepOk();
       Effects.glitchBurst(250);
-      if (log) log.textContent = scene.winText || "ПРОТОКОЛ СОБЛЮДЁН.";
+      if (log) log.textContent = scene.winText || "ПРОТОКОЛ СОБЛЮДЁН. ЗАПИСЬ ПРОДОЛЖАЕТСЯ…";
       setTimeout(() => api.go(scene.nextCorrect || scene.next), 850);
     } else {
       api.state.score += scene.scoreLose ?? -1;
@@ -85,8 +85,13 @@ const MiniGames = (() => {
       ArchiveAudio.beepFail();
       if (scene.stingOnFail) Effects.showAlternateFace(900);
       else Effects.glitchBurst(400);
-      if (log) log.textContent = scene.loseText || "СБОЙ. ОНИ ЗАПОМНИЛИ ВАС.";
-      setTimeout(() => api.go(scene.nextWrong || scene.next), 1100);
+      if (scene.retryOnFail) {
+        if (log) log.textContent = (scene.loseText || "СБОЙ.") + " ПОВТОРИТЕ ПРОТОКОЛ.";
+        setTimeout(() => api.go(api.state.scene), 1100);
+      } else {
+        if (log) log.textContent = scene.loseText || "СБОЙ. ЗАПИСЬ ИДЁТ ДАЛЬШЕ — ХУЖЕ.";
+        setTimeout(() => api.go(scene.nextWrong || scene.next), 1100);
+      }
     }
   }
 
