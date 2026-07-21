@@ -1,19 +1,28 @@
-/* Original Web Audio library inspired by Mandela Catalogue atmosphere.
-   Does NOT include copyrighted audio from the series. */
+/* Archive audio: Mixkit royalty-free samples + light Web Audio fallback.
+   Does NOT include copyrighted audio from The Mandela Catalogue. */
 const ArchiveAudio = (() => {
+  const BASE = "assets/sfx/";
   let ctx = null;
   let master = null;
-  let humOsc = null;
-  let humGain = null;
-  let noiseNode = null;
-  let noiseGain = null;
-  let choirNodes = [];
-  let choirGain = null;
-  let heartTimer = null;
-  let phoneOsc = null;
-  let phoneGain = null;
+  let busFx = null;
+  let busBed = null;
   let started = false;
   let muted = false;
+  let buffers = new Map();
+  let loading = null;
+  let bedNodes = []; // looping ambience sources
+  let bedGain = null;
+  let droneGain = null;
+  let heartTimer = null;
+  let activeOnes = new Set();
+
+  const FILES = [
+    "ambience", "drone", "room", "knock", "door", "phone", "heart",
+    "static", "static_short", "radio", "radio_creepy", "glitch", "sting",
+    "impact", "choir", "choir_dark", "angel", "whisper", "breath", "presence",
+    "scratch", "tape", "vhs", "emergency", "laugh", "cry", "voices", "gibber",
+    "wind", "swell", "riser", "creak", "alarm",
+  ];
 
   function ensure() {
     if (ctx) return ctx;
@@ -21,11 +30,114 @@ const ArchiveAudio = (() => {
     if (!AC) return null;
     ctx = new AC();
     master = ctx.createGain();
-    master.gain.value = 0.38;
+    master.gain.value = 0.85;
+    busFx = ctx.createGain();
+    busFx.gain.value = 0.95;
+    busBed = ctx.createGain();
+    busBed.gain.value = 0.55;
+    busFx.connect(master);
+    busBed.connect(master);
     master.connect(ctx.destination);
     return ctx;
   }
 
+  async function loadAll() {
+    ensure();
+    if (!ctx) return;
+    if (buffers.size) return;
+    if (loading) return loading;
+    loading = Promise.all(
+      FILES.map(async (name) => {
+        try {
+          const res = await fetch(`${BASE}${name}.mp3`);
+          if (!res.ok) throw new Error(res.statusText);
+          const arr = await res.arrayBuffer();
+          const buf = await ctx.decodeAudioData(arr.slice(0));
+          buffers.set(name, buf);
+        } catch (_) {
+          /* synth fallback remains */
+        }
+      })
+    );
+    await loading;
+    loading = null;
+  }
+
+  function has(name) {
+    return buffers.has(name);
+  }
+
+  function stopNode(entry) {
+    try { entry.src.stop(); } catch (_) { /* ok */ }
+    try { entry.src.disconnect(); } catch (_) { /* ok */ }
+    try { entry.gain.disconnect(); } catch (_) { /* ok */ }
+    activeOnes.delete(entry);
+  }
+
+  /** Play a decoded sample. Returns stop() handle. */
+  function playBuf(name, opts = {}) {
+    if (!started || muted || !ctx) return null;
+    const buf = buffers.get(name);
+    if (!buf) return null;
+    const {
+      gain = 0.7,
+      loop = false,
+      dest = busFx,
+      rate = 1,
+      fadeIn = 0,
+      offset = 0,
+      duration = 0,
+    } = opts;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = !!loop;
+    src.playbackRate.value = rate;
+    const g = ctx.createGain();
+    const now = ctx.currentTime;
+    if (fadeIn > 0) {
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0001, gain), now + fadeIn);
+    } else {
+      g.gain.value = gain;
+    }
+    src.connect(g);
+    g.connect(dest || busFx);
+    const entry = { src, gain: g, name };
+    activeOnes.add(entry);
+    src.onended = () => activeOnes.delete(entry);
+    try {
+      if (duration > 0) src.start(now, offset, duration);
+      else src.start(now, offset);
+    } catch (_) {
+      activeOnes.delete(entry);
+      return null;
+    }
+    return {
+      stop(fade = 0.15) {
+        if (!ctx) return;
+        const t = ctx.currentTime;
+        try {
+          g.gain.cancelScheduledValues(t);
+          g.gain.setValueAtTime(Math.max(0.0001, g.gain.value), t);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + fade);
+          src.stop(t + fade + 0.02);
+        } catch (_) { /* ok */ }
+        setTimeout(() => stopNode(entry), (fade + 0.05) * 1000);
+      },
+    };
+  }
+
+  function playOne(name, gain = 0.7, rate = 1) {
+    return playBuf(name, { gain, rate });
+  }
+
+  function playCombo(names, gain = 0.65) {
+    names.forEach((n, i) => {
+      setTimeout(() => playOne(n, gain * (i === 0 ? 1 : 0.85)), i * 40);
+    });
+  }
+
+  /* ---- light synth leftovers for UI ticks ---- */
   function createNoiseBuffer(seconds = 2) {
     const bufferSize = Math.floor(ctx.sampleRate * seconds);
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
@@ -34,264 +146,147 @@ const ArchiveAudio = (() => {
     return buffer;
   }
 
-  function envGain(peak = 0.1, attack = 0.02, hold = 0.1, release = 0.3) {
-    const g = ctx.createGain();
-    const now = ctx.currentTime;
-    g.gain.setValueAtTime(0.0001, now);
-    g.gain.exponentialRampToValueAtTime(peak, now + attack);
-    g.gain.setValueAtTime(peak, now + attack + hold);
-    g.gain.exponentialRampToValueAtTime(0.0001, now + attack + hold + release);
-    return g;
-  }
-
-  async function start() {
-    ensure();
-    if (!ctx || started) return;
-    if (ctx.state === "suspended") await ctx.resume();
-
-    humOsc = ctx.createOscillator();
-    humOsc.type = "sine";
-    humOsc.frequency.value = 58;
-    humGain = ctx.createGain();
-    humGain.gain.value = 0.04;
-    const humFilter = ctx.createBiquadFilter();
-    humFilter.type = "lowpass";
-    humFilter.frequency.value = 180;
-    humOsc.connect(humFilter);
-    humFilter.connect(humGain);
-    humGain.connect(master);
-    humOsc.start();
-
-    const noiseBuffer = createNoiseBuffer(2);
-    noiseNode = ctx.createBufferSource();
-    noiseNode.buffer = noiseBuffer;
-    noiseNode.loop = true;
-    noiseGain = ctx.createGain();
-    noiseGain.gain.value = 0.01;
-    const band = ctx.createBiquadFilter();
-    band.type = "bandpass";
-    band.frequency.value = 1200;
-    band.Q.value = 0.7;
-    noiseNode.connect(band);
-    band.connect(noiseGain);
-    noiseGain.connect(master);
-    noiseNode.start();
-
-    // Soft distorted "choir" pad — signature analog-horror texture
-    choirGain = ctx.createGain();
-    choirGain.gain.value = 0.012;
-    const choirFilter = ctx.createBiquadFilter();
-    choirFilter.type = "bandpass";
-    choirFilter.frequency.value = 620;
-    choirFilter.Q.value = 0.8;
-    choirGain.connect(choirFilter);
-    choirFilter.connect(master);
-    [196, 247, 294, 370].forEach((freq, i) => {
-      const o = ctx.createOscillator();
-      o.type = i % 2 ? "triangle" : "sine";
-      o.frequency.value = freq;
-      const lfo = ctx.createOscillator();
-      lfo.frequency.value = 0.07 + i * 0.03;
-      const lfoGain = ctx.createGain();
-      lfoGain.gain.value = 4 + i;
-      lfo.connect(lfoGain);
-      lfoGain.connect(o.frequency);
-      o.connect(choirGain);
-      o.start();
-      lfo.start();
-      choirNodes.push(o, lfo);
-    });
-
-    started = true;
-  }
-
-  function setIntensity(level = 0) {
-    if (!started || muted) return;
-    const n = Math.max(0, Math.min(1, level));
-    if (noiseGain) noiseGain.gain.setTargetAtTime(0.01 + n * 0.05, ctx.currentTime, 0.2);
-    if (humGain) humGain.gain.setTargetAtTime(0.04 + n * 0.035, ctx.currentTime, 0.2);
-    if (choirGain) choirGain.gain.setTargetAtTime(0.012 + n * 0.04, ctx.currentTime, 0.35);
-  }
-
   function blip(freq = 880, dur = 0.08, gain = 0.08) {
-    if (!started || muted) return;
+    if (!started || muted || !ctx) return;
     const o = ctx.createOscillator();
     const g = ctx.createGain();
     o.type = "square";
     o.frequency.value = freq;
     g.gain.value = gain;
     o.connect(g);
-    g.connect(master);
+    g.connect(busFx);
     o.start();
     g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
     o.stop(ctx.currentTime + dur + 0.02);
   }
 
-  function staticBurst(dur = 0.35, gain = 0.16) {
-    if (!started || muted) return;
+  function synthStatic(dur = 0.35, gain = 0.16) {
+    if (!started || muted || !ctx) return;
     const src = ctx.createBufferSource();
     src.buffer = createNoiseBuffer(Math.max(0.2, dur));
-    const g = envGain(gain, 0.01, dur * 0.3, dur * 0.6);
     const f = ctx.createBiquadFilter();
     f.type = "highpass";
     f.frequency.value = 800;
+    const g = ctx.createGain();
+    const now = ctx.currentTime;
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(gain, now + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
     src.connect(f);
     f.connect(g);
-    g.connect(master);
+    g.connect(busFx);
     src.start();
-    src.stop(ctx.currentTime + dur + 0.05);
+    src.stop(now + dur + 0.05);
   }
 
-  function sting() {
-    if (!started || muted) return;
-    const now = ctx.currentTime;
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.type = "sawtooth";
-    o.frequency.setValueAtTime(90, now);
-    o.frequency.exponentialRampToValueAtTime(40, now + 0.55);
-    g.gain.setValueAtTime(0.001, now);
-    g.gain.exponentialRampToValueAtTime(0.22, now + 0.04);
-    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.7);
-    o.connect(g);
-    g.connect(master);
-    o.start(now);
-    o.stop(now + 0.75);
-    staticBurst(0.4, 0.18);
+  function startBeds() {
+    stopBeds();
+    if (!ctx) return;
+    bedGain = ctx.createGain();
+    bedGain.gain.value = 0.22;
+    bedGain.connect(busBed);
+    droneGain = ctx.createGain();
+    droneGain.gain.value = 0.0;
+    droneGain.connect(busBed);
+
+    const amb = has("ambience")
+      ? playBuf("ambience", { gain: 1, loop: true, dest: bedGain, fadeIn: 1.2 })
+      : null;
+    const drone = has("drone")
+      ? playBuf("drone", { gain: 1, loop: true, dest: droneGain, fadeIn: 2.0 })
+      : null;
+    const room = has("room")
+      ? playBuf("room", { gain: 0.55, loop: true, dest: bedGain, fadeIn: 1.8, rate: 0.95 })
+      : null;
+    bedNodes = [amb, drone, room].filter(Boolean);
   }
 
-  function choirSwell(seconds = 2.2) {
-    if (!started || muted || !choirGain) return;
-    const now = ctx.currentTime;
-    const base = choirGain.gain.value;
-    choirGain.gain.cancelScheduledValues(now);
-    choirGain.gain.setValueAtTime(base, now);
-    choirGain.gain.linearRampToValueAtTime(0.08, now + 0.4);
-    choirGain.gain.linearRampToValueAtTime(base, now + seconds);
-    // dissonant overtone
-    const o = ctx.createOscillator();
-    const g = envGain(0.05, 0.3, seconds * 0.4, seconds * 0.4);
-    o.type = "sine";
-    o.frequency.setValueAtTime(666, now);
-    o.frequency.linearRampToValueAtTime(440, now + seconds);
-    o.connect(g);
-    g.connect(master);
-    o.start(now);
-    o.stop(now + seconds + 0.1);
+  function stopBeds() {
+    bedNodes.forEach((h) => h && h.stop(0.4));
+    bedNodes = [];
   }
 
-  function whisper(seconds = 1.6) {
-    if (!started || muted) return;
-    const src = ctx.createBufferSource();
-    src.buffer = createNoiseBuffer(seconds);
-    const bp = ctx.createBiquadFilter();
-    bp.type = "bandpass";
-    bp.frequency.value = 1800;
-    bp.Q.value = 2.5;
-    const g = envGain(0.07, 0.15, seconds * 0.4, seconds * 0.4);
-    // amplitude modulation for "speech-like" texture
-    const lfo = ctx.createOscillator();
-    const lfoG = ctx.createGain();
-    lfo.frequency.value = 7.5;
-    lfoG.gain.value = 0.045;
-    lfo.connect(lfoG);
-    lfoG.connect(g.gain);
-    src.connect(bp);
-    bp.connect(g);
-    g.connect(master);
-    src.start();
-    lfo.start();
-    src.stop(ctx.currentTime + seconds);
-    lfo.stop(ctx.currentTime + seconds);
-  }
-
-  function knock(times = 3) {
-    if (!started || muted) return;
-    for (let i = 0; i < times; i++) {
-      setTimeout(() => {
-        if (!started || muted) return;
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
-        o.type = "sine";
-        o.frequency.value = 90 + Math.random() * 20;
-        const now = ctx.currentTime;
-        g.gain.setValueAtTime(0.0001, now);
-        g.gain.exponentialRampToValueAtTime(0.28, now + 0.01);
-        g.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
-        o.connect(g);
-        g.connect(master);
-        o.start(now);
-        o.stop(now + 0.2);
-        staticBurst(0.05, 0.04);
-      }, i * 420);
+  async function start() {
+    ensure();
+    if (!ctx) return;
+    if (ctx.state === "suspended") await ctx.resume();
+    await loadAll();
+    if (!started) {
+      started = true;
+      startBeds();
+    } else if (ctx.state === "running" && !bedNodes.length) {
+      startBeds();
     }
   }
 
-  function scratch(seconds = 1.2) {
-    if (!started || muted) return;
-    const src = ctx.createBufferSource();
-    src.buffer = createNoiseBuffer(seconds);
-    const bp = ctx.createBiquadFilter();
-    bp.type = "bandpass";
-    bp.frequency.setValueAtTime(400, ctx.currentTime);
-    bp.frequency.linearRampToValueAtTime(2400, ctx.currentTime + seconds);
-    bp.Q.value = 8;
-    const g = envGain(0.09, 0.05, seconds * 0.5, seconds * 0.35);
-    src.connect(bp);
-    bp.connect(g);
-    g.connect(master);
-    src.start();
-    src.stop(ctx.currentTime + seconds);
+  function setIntensity(level = 0) {
+    if (!started || muted || !ctx) return;
+    const n = Math.max(0, Math.min(1, level));
+    if (bedGain) bedGain.gain.setTargetAtTime(0.18 + n * 0.2, ctx.currentTime, 0.35);
+    if (droneGain) droneGain.gain.setTargetAtTime(n * 0.45, ctx.currentTime, 0.45);
   }
 
-  function tapeRewind(seconds = 1.1) {
-    if (!started || muted) return;
-    const o = ctx.createOscillator();
-    const g = envGain(0.07, 0.05, 0.2, seconds * 0.7);
-    o.type = "sawtooth";
-    o.frequency.setValueAtTime(120, ctx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(1800, ctx.currentTime + seconds);
-    o.connect(g);
-    g.connect(master);
-    o.start();
-    o.stop(ctx.currentTime + seconds + 0.05);
-    staticBurst(seconds * 0.6, 0.06);
+  function staticBurst(dur = 0.35, gain = 0.7) {
+    if (has("static") || has("static_short") || has("glitch")) {
+      const name = dur > 0.3 ? (has("static") ? "static" : "glitch") : (has("static_short") ? "static_short" : "static");
+      playOne(name, gain);
+      return;
+    }
+    synthStatic(dur, gain * 0.2);
+  }
+
+  function sting() {
+    if (has("sting") || has("impact")) {
+      playOne(has("sting") ? "sting" : "impact", 0.9);
+      setTimeout(() => staticBurst(0.25, 0.55), 80);
+      return;
+    }
+    staticBurst(0.4, 0.5);
+  }
+
+  function choirSwell() {
+    if (has("choir_dark")) playOne("choir_dark", 0.75);
+    else if (has("choir")) playOne("choir", 0.75);
+    else if (has("swell")) playOne("swell", 0.7);
+  }
+
+  function whisper() {
+    if (has("whisper")) playOne("whisper", 0.7);
+    else if (has("voices")) playOne("voices", 0.65);
+    else staticBurst(0.5, 0.4);
+  }
+
+  function knock() {
+    if (has("knock")) {
+      playOne("knock", 0.85);
+      setTimeout(() => { if (has("creak")) playOne("creak", 0.35); }, 500);
+      return;
+    }
+    staticBurst(0.1, 0.3);
+  }
+
+  function scratch() {
+    if (has("scratch")) playOne("scratch", 0.75);
+    else if (has("vhs")) playOne("vhs", 0.7);
+    else staticBurst(0.6, 0.45);
+  }
+
+  function tapeRewind() {
+    if (has("tape")) playOne("tape", 0.8);
+    else if (has("vhs")) playOne("vhs", 0.75);
   }
 
   function heartbeat(times = 4) {
-    if (!started || muted) return;
     stopHeartbeat();
+    if (has("heart")) {
+      // sample already loops several beats — play a slice / full once
+      playOne("heart", 0.7);
+      return;
+    }
     let n = 0;
     const beat = () => {
       if (!started || muted || n >= times) return;
-      const now = ctx.currentTime;
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = "sine";
-      o.frequency.value = 55;
-      g.gain.setValueAtTime(0.0001, now);
-      g.gain.exponentialRampToValueAtTime(0.2, now + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
-      o.connect(g);
-      g.connect(master);
-      o.start(now);
-      o.stop(now + 0.15);
-      // double thump
-      setTimeout(() => {
-        if (!started || muted) return;
-        const o2 = ctx.createOscillator();
-        const g2 = ctx.createGain();
-        o2.type = "sine";
-        o2.frequency.value = 45;
-        const t = ctx.currentTime;
-        g2.gain.setValueAtTime(0.0001, t);
-        g2.gain.exponentialRampToValueAtTime(0.14, t + 0.02);
-        g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
-        o2.connect(g2);
-        g2.connect(master);
-        o2.start(t);
-        o2.stop(t + 0.16);
-      }, 140);
+      blip(55, 0.12, 0.12);
       n += 1;
       if (n < times) heartTimer = setTimeout(beat, 780);
     };
@@ -306,196 +301,185 @@ const ArchiveAudio = (() => {
   }
 
   function emergencyTone() {
-    if (!started || muted) return;
-    const now = ctx.currentTime;
-    [853, 960].forEach((freq, i) => {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = "sine";
-      o.frequency.value = freq;
-      g.gain.setValueAtTime(0.0001, now);
-      g.gain.exponentialRampToValueAtTime(0.06, now + 0.05);
-      g.gain.setValueAtTime(0.06, now + 1.4);
-      g.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
-      o.connect(g);
-      g.connect(master);
-      o.start(now + i * 0.01);
-      o.stop(now + 1.85);
-    });
+    if (has("emergency")) playOne("emergency", 0.7);
+    else if (has("alarm")) playOne("alarm", 0.65);
   }
 
   function thinkOfSomeone() {
-    // Original eerie motif — not a rip of series audio
-    if (!started || muted) return;
-    const notes = [220, 247, 196, 165, 147];
-    notes.forEach((freq, i) => {
-      const t = ctx.currentTime + i * 0.55;
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = "triangle";
-      o.frequency.value = freq;
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.07, t + 0.08);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
-      o.connect(g);
-      g.connect(master);
-      o.start(t);
-      o.stop(t + 0.75);
-    });
-    setTimeout(() => whisper(1.8), 400);
+    if (has("angel")) playOne("angel", 0.7);
+    setTimeout(() => whisper(), 500);
+    setTimeout(() => { if (has("choir")) playOne("choir", 0.45); }, 1200);
   }
 
   function gabriel() {
-    // Deep distorted "false angel" presence
-    if (!started || muted) return;
-    const now = ctx.currentTime;
-    const o = ctx.createOscillator();
-    const o2 = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.type = "sawtooth";
-    o2.type = "square";
-    o.frequency.setValueAtTime(70, now);
-    o.frequency.linearRampToValueAtTime(48, now + 2.2);
-    o2.frequency.setValueAtTime(71.5, now);
-    g.gain.setValueAtTime(0.0001, now);
-    g.gain.exponentialRampToValueAtTime(0.09, now + 0.3);
-    g.gain.exponentialRampToValueAtTime(0.0001, now + 2.4);
-    const f = ctx.createBiquadFilter();
-    f.type = "lowpass";
-    f.frequency.value = 320;
-    o.connect(f);
-    o2.connect(f);
-    f.connect(g);
-    g.connect(master);
-    o.start(now);
-    o2.start(now);
-    o.stop(now + 2.5);
-    o2.stop(now + 2.5);
-    choirSwell(2.5);
+    if (has("choir_dark")) playOne("choir_dark", 0.8);
+    else if (has("angel")) playOne("angel", 0.75);
+    setTimeout(() => {
+      if (has("voices")) playOne("voices", 0.55);
+      else whisper();
+    }, 400);
+    setTimeout(() => { if (has("swell")) playOne("swell", 0.55); }, 900);
   }
 
   function doorOpen() {
-    if (!started || muted) return;
-    const now = ctx.currentTime;
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.type = "triangle";
-    o.frequency.setValueAtTime(180, now);
-    o.frequency.exponentialRampToValueAtTime(60, now + 0.5);
-    g.gain.setValueAtTime(0.0001, now);
-    g.gain.exponentialRampToValueAtTime(0.12, now + 0.04);
-    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
-    o.connect(g);
-    g.connect(master);
-    o.start(now);
-    o.stop(now + 0.6);
-    scratch(0.4);
+    if (has("door")) playOne("door", 0.85);
+    else if (has("creak")) playOne("creak", 0.8);
+    setTimeout(() => scratch(), 350);
   }
 
   function breath() {
-    if (!started || muted) return;
-    const src = ctx.createBufferSource();
-    src.buffer = createNoiseBuffer(1.4);
-    const f = ctx.createBiquadFilter();
-    f.type = "lowpass";
-    f.frequency.setValueAtTime(500, ctx.currentTime);
-    f.frequency.linearRampToValueAtTime(1400, ctx.currentTime + 0.7);
-    f.frequency.linearRampToValueAtTime(400, ctx.currentTime + 1.3);
-    const g = envGain(0.06, 0.2, 0.5, 0.5);
-    src.connect(f);
-    f.connect(g);
-    g.connect(master);
-    src.start();
-    src.stop(ctx.currentTime + 1.4);
+    if (has("breath")) playOne("breath", 0.7);
+    else if (has("presence")) playOne("presence", 0.65);
   }
 
-  function phoneRing(times = 3) {
-    if (!started || muted) return;
-    stopPhone();
-    phoneOsc = ctx.createOscillator();
-    const phoneOsc2 = ctx.createOscillator();
-    phoneGain = ctx.createGain();
-    phoneOsc.type = "sine";
-    phoneOsc2.type = "sine";
-    phoneOsc.frequency.value = 440;
-    phoneOsc2.frequency.value = 480;
-    phoneGain.gain.value = 0;
-    phoneOsc.connect(phoneGain);
-    phoneOsc2.connect(phoneGain);
-    phoneGain.connect(master);
-    phoneOsc.start();
-    phoneOsc2.start();
-
-    const now = ctx.currentTime;
-    for (let i = 0; i < times; i++) {
-      const t = now + i * 1.4;
-      phoneGain.gain.setValueAtTime(0.0001, t);
-      phoneGain.gain.exponentialRampToValueAtTime(0.08, t + 0.05);
-      phoneGain.gain.setValueAtTime(0.08, t + 0.35);
-      phoneGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
-      phoneGain.gain.setValueAtTime(0.0001, t + 0.55);
-      phoneGain.gain.exponentialRampToValueAtTime(0.08, t + 0.6);
-      phoneGain.gain.setValueAtTime(0.08, t + 0.9);
-      phoneGain.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
+  function murmur(style = "human") {
+    if (style === "angel") {
+      if (has("angel")) playOne("angel", 0.55);
+      else if (has("choir")) playOne("choir", 0.5);
+      return;
     }
-    // keep second osc for cleanup via stopPhone by attaching
-    phoneOsc._buddy = phoneOsc2;
-    setTimeout(stopPhone, times * 1400 + 200);
+    if (style === "alternate") {
+      if (has("voices")) playOne("voices", 0.7);
+      else if (has("gibber")) playOne("gibber", 0.7);
+      else whisper();
+      return;
+    }
+    if (style === "whisper") {
+      whisper();
+      return;
+    }
+    if (style === "phone") {
+      if (has("radio_creepy")) playOne("radio_creepy", 0.55);
+      else whisper();
+      return;
+    }
+    // human / default
+    if (has("whisper")) playOne("whisper", 0.55);
+    else if (has("voices")) playOne("voices", 0.5);
+  }
+
+  function speak() {
+    murmur("phone");
+    setTimeout(() => {
+      staticBurst(0.2, 0.5);
+      murmur("alternate");
+    }, 700);
+  }
+
+  function angel() {
+    if (has("angel")) playOne("angel", 0.8);
+    else choirSwell();
+    setTimeout(() => whisper(), 900);
+  }
+
+  function laugh() {
+    if (has("laugh")) playOne("laugh", 0.75);
+    else murmur("alternate");
+  }
+
+  function cry() {
+    if (has("cry")) playOne("cry", 0.65);
+    else breath();
+  }
+
+  function radio() {
+    if (has("radio")) playOne("radio", 0.7);
+    else if (has("radio_creepy")) playOne("radio_creepy", 0.75);
+    else staticBurst(0.8, 0.6);
+    setTimeout(() => whisper(), 600);
+  }
+
+  function vhs() {
+    if (has("vhs")) playOne("vhs", 0.7);
+    tapeRewind();
+    setTimeout(() => scratch(), 300);
+    setTimeout(() => staticBurst(0.35, 0.5), 700);
+  }
+
+  function presence() {
+    if (has("presence")) playOne("presence", 0.7);
+    else breath();
+    setTimeout(() => whisper(), 450);
+    if (has("wind")) setTimeout(() => playOne("wind", 0.35), 200);
+  }
+
+  function reverseGibber() {
+    if (has("gibber")) playOne("gibber", 0.75, 1.05);
+    else if (has("voices")) playOne("voices", 0.7, 1.15);
+    staticBurst(0.3, 0.45);
+  }
+
+  function phoneRing() {
+    if (has("phone")) {
+      playOne("phone", 0.7);
+      setTimeout(() => murmur("phone"), 800);
+      return;
+    }
+    emergencyTone();
   }
 
   function stopPhone() {
-    if (phoneOsc) {
-      try { phoneOsc.stop(); } catch (_) { /* ok */ }
-      if (phoneOsc._buddy) {
-        try { phoneOsc._buddy.stop(); } catch (_) { /* ok */ }
-      }
-      phoneOsc.disconnect();
-      phoneOsc = null;
-    }
-    if (phoneGain) {
-      phoneGain.disconnect();
-      phoneGain = null;
-    }
+    // sample-based ring is one-shot; nothing persistent
   }
 
   function beepFail() {
-    blip(180, 0.25, 0.1);
-    setTimeout(() => blip(120, 0.35, 0.1), 120);
+    if (has("glitch")) playOne("glitch", 0.45);
+    blip(180, 0.25, 0.08);
+    setTimeout(() => blip(120, 0.35, 0.08), 120);
   }
 
   function beepOk() {
-    blip(660, 0.07, 0.06);
-    setTimeout(() => blip(880, 0.09, 0.06), 80);
+    blip(660, 0.07, 0.05);
+    setTimeout(() => blip(880, 0.09, 0.05), 80);
   }
 
   function play(name) {
     const map = {
-      phone: () => phoneRing(2),
-      sting: () => sting(),
-      face: () => sting(),
-      glitch: () => { staticBurst(0.25, 0.1); blip(140, 0.2, 0.05); },
-      choir: () => choirSwell(2.4),
-      whisper: () => whisper(1.8),
-      knock: () => knock(3),
-      scratch: () => scratch(1.2),
-      tape: () => tapeRewind(1.1),
+      phone: () => phoneRing(),
+      sting: () => { sting(); setTimeout(() => laugh(), 180); },
+      face: () => { sting(); setTimeout(() => murmur("alternate"), 120); },
+      glitch: () => {
+        if (has("glitch")) playOne("glitch", 0.75);
+        staticBurst(0.25, 0.55);
+        reverseGibber();
+      },
+      choir: () => { choirSwell(); setTimeout(() => murmur("angel"), 350); },
+      whisper: () => { whisper(); if (has("wind")) playOne("wind", 0.25); },
+      knock: () => { knock(); setTimeout(() => presence(), 700); },
+      scratch: () => { scratch(); setTimeout(() => presence(), 250); },
+      tape: () => { tapeRewind(); setTimeout(() => vhs(), 180); },
       heart: () => heartbeat(5),
-      emergency: () => emergencyTone(),
+      emergency: () => { emergencyTone(); setTimeout(() => murmur("phone"), 400); },
       think: () => thinkOfSomeone(),
       gabriel: () => gabriel(),
-      door: () => doorOpen(),
-      breath: () => breath(),
-      static: () => staticBurst(0.45, 0.14),
+      door: () => { doorOpen(); setTimeout(() => murmur("alternate"), 450); },
+      breath: () => { breath(); setTimeout(() => whisper(), 400); },
+      static: () => { staticBurst(0.5, 0.7); setTimeout(() => reverseGibber(), 80); },
+      murmur: () => murmur("human"),
+      speak: () => speak(),
+      angel: () => angel(),
+      laugh: () => laugh(),
+      cry: () => cry(),
+      radio: () => radio(),
+      vhs: () => vhs(),
+      presence: () => presence(),
+      gibber: () => reverseGibber(),
+      alternate: () => murmur("alternate"),
+      beepOk: () => beepOk(),
+      riser: () => { if (has("riser")) playOne("riser", 0.7); else if (has("swell")) playOne("swell", 0.7); },
     };
     (map[name] || (() => {}))();
   }
 
   function toggleMute() {
     muted = !muted;
-    if (master) master.gain.value = muted ? 0 : 0.38;
+    if (master) master.gain.value = muted ? 0 : 0.85;
     if (muted) {
       stopPhone();
       stopHeartbeat();
+      stopBeds();
+    } else if (started) {
+      startBeds();
     }
     return muted;
   }
@@ -518,6 +502,15 @@ const ArchiveAudio = (() => {
     gabriel,
     doorOpen,
     breath,
+    murmur,
+    speak,
+    angel,
+    laugh,
+    cry,
+    radio,
+    vhs,
+    presence,
+    reverseGibber,
     phoneRing,
     stopPhone,
     beepFail,

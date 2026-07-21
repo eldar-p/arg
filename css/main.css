@@ -505,8 +505,48 @@ button.danger {
 
 .glitch-face__svg {
   width: min(70vw, 320px);
-  filter: contrast(1.4) saturate(0.2);
+  height: auto;
+  filter: contrast(1.45) saturate(0.25) hue-rotate(-10deg);
   animation: faceJitter 0.12s steps(2) infinite;
+  border: 1px solid rgba(255, 77, 77, 0.45);
+}
+
+.glitch-face__photo-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.glitch-face__label {
+  margin-top: 0.6rem;
+  letter-spacing: 0.28em;
+  color: var(--danger);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.face canvas,
+.dossier__art canvas,
+.dossier__art .portrait-photo,
+.catalog-card canvas,
+.catalog-card .portrait-photo,
+.char-chip canvas,
+.char-chip .portrait-photo {
+  image-rendering: auto;
+  background: #050805;
+  object-fit: cover;
+  object-position: center 20%;
+  display: block;
+}
+
+.portrait-photo {
+  width: 100%;
+  height: auto;
+  filter: contrast(1.05) saturate(0.85);
+}
+
+.portrait-photo.is-alt {
+  filter: contrast(1.15) saturate(0.55) hue-rotate(-8deg);
 }
 
 @keyframes faceJitter {
@@ -532,7 +572,8 @@ button.danger {
   border-bottom: 1px solid rgba(125, 255, 154, 0.15);
 }
 
-.char-chip canvas {
+.char-chip canvas,
+.char-chip .portrait-photo {
   width: 48px;
   height: 64px;
   border: 1px solid rgba(125, 255, 154, 0.3);
@@ -576,7 +617,8 @@ button.danger {
   width: 100%;
 }
 
-.catalog-card canvas {
+.catalog-card canvas,
+.catalog-card .portrait-photo {
   width: 72px;
   height: 96px;
   flex-shrink: 0;
@@ -625,9 +667,11 @@ button.danger {
   position: relative;
 }
 
-.dossier__art canvas {
+.dossier__art canvas,
+.dossier__art .portrait-photo {
   width: 100%;
   height: auto;
+  aspect-ratio: 3 / 4;
   border: 1px solid rgba(125, 255, 154, 0.3);
   display: block;
 }
@@ -700,6 +744,172 @@ button.danger {
   .dossier__art {
     max-width: 180px;
   }
+}
+
+/* ===== MINI-GAMES ===== */
+.mg-prompt {
+  color: var(--amber);
+  margin: 1rem 0 0.75rem;
+  line-height: 1.45;
+}
+
+.mg-look {
+  margin-top: 1rem;
+}
+
+.mg-look__stage {
+  position: relative;
+  width: min(100%, 220px);
+  margin: 0 auto 1rem;
+  border: 1px solid rgba(255, 77, 77, 0.45);
+  cursor: none;
+  touch-action: none;
+}
+
+.mg-look__stage canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  filter: contrast(1.2) saturate(0.3);
+}
+
+.mg-look__warn {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.35rem;
+  text-align: center;
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  background: rgba(0, 0, 0, 0.75);
+  color: var(--danger);
+}
+
+.mg-look__meta {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-bottom: 0.75rem;
+}
+
+.mg-bar {
+  height: 0.55rem;
+  background: rgba(125, 255, 154, 0.12);
+  border: 1px solid rgba(125, 255, 154, 0.2);
+  margin: 0.75rem 0;
+  overflow: hidden;
+}
+
+.mg-bar i {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: var(--amber);
+  transition: width 0.05s linear;
+}
+
+.mg-bar i.hot {
+  background: var(--danger);
+}
+
+.mg-knock__pulse {
+  width: 3rem;
+  height: 3rem;
+  margin: 0.5rem auto 1rem;
+  border: 2px solid var(--amber);
+  border-radius: 50%;
+  opacity: 0.35;
+}
+
+.mg-knock__pulse.hit {
+  animation: knockPulse 0.35s ease-out;
+}
+
+@keyframes knockPulse {
+  0% { transform: scale(0.7); opacity: 1; box-shadow: 0 0 0 0 rgba(230, 179, 90, 0.5); }
+  100% { transform: scale(1.35); opacity: 0.2; box-shadow: 0 0 0 18px rgba(230, 179, 90, 0); }
+}
+
+.mg-memory.is-hidden {
+  opacity: 0.15;
+  filter: blur(2px);
+}
+
+.mg-memory {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 700px) {
+  .mg-memory {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.mg-static {
+  position: relative;
+  margin-top: 1rem;
+}
+
+.mg-static__hud {
+  color: var(--phosphor-dim);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+
+.mg-static__hud b {
+  color: var(--amber);
+}
+
+.mg-static__stream {
+  position: relative;
+  height: 220px;
+  border: 1px solid rgba(125, 255, 154, 0.2);
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(125, 255, 154, 0.03) 0 1px,
+      transparent 1px 3px
+    ),
+    #050805;
+  overflow: hidden;
+}
+
+.mg-chip {
+  position: absolute;
+  top: -2rem;
+  border: 1px solid var(--phosphor-dim);
+  background: rgba(0, 0, 0, 0.65);
+  color: var(--phosphor);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+  animation-name: fallChip;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+.mg-chip.is-trap {
+  border-color: rgba(255, 77, 77, 0.55);
+  color: var(--danger);
+}
+
+.mg-chip.is-safe {
+  border-color: rgba(230, 179, 90, 0.55);
+  color: var(--amber);
+}
+
+.mg-chip:hover {
+  background: rgba(125, 255, 154, 0.1);
+}
+
+@keyframes fallChip {
+  from { transform: translateY(0); opacity: 0.2; }
+  10% { opacity: 1; }
+  to { transform: translateY(240px); opacity: 0.85; }
 }
 
 @media (max-width: 700px) {

@@ -33,6 +33,39 @@
     });
   }
 
+  function photoFor(ch, asAlternate = false) {
+    if (!ch) return null;
+    if (asAlternate) return ch.photoAlt || ch.photo || null;
+    return ch.photo || null;
+  }
+
+  function paintPortrait(canvas, seed, alternate, ch = null) {
+    const src = ch ? photoFor(ch, !!alternate || !!ch.alternate) : null;
+    // If character is marked alternate in dossier but we want human look in lineup:
+    if (ch && !alternate && ch.alternate) {
+      return Effects.drawPortrait(canvas, seed, false, ch.photo);
+    }
+    if (ch && alternate) {
+      return Effects.drawPortrait(canvas, seed, true, ch.photoAlt || ch.photo);
+    }
+    return Effects.drawPortrait(canvas, seed, !!alternate, src);
+  }
+
+  /** Real photo element for dossiers / catalog (sharper than canvas redraw). */
+  function setPhotoEl(el, ch, alternate = false) {
+    if (!el || !ch) return;
+    const useAlt = !!alternate;
+    const src =
+      photoFor(ch, useAlt) ||
+      (typeof Portraits !== "undefined" ? Portraits.pathFor(ch.id, useAlt) : null);
+    if (typeof Portraits !== "undefined") Portraits.setImage(el, src);
+    else if (src) {
+      el.src = src;
+      el.alt = ch.nameRu || ch.name || "photo";
+    }
+    el.classList.toggle("is-alt", useAlt);
+  }
+
   function updateHud(status, channel) {
     clampParanoia();
     const filled = "● ".repeat(state.paranoia).trim();
@@ -112,6 +145,10 @@
       clampParanoia();
     }
     if (typeof scene.score === "number") state.score += scene.score;
+    if (scene.flags) {
+      Object.assign(state.flags, scene.flags);
+      if (scene.flags.role) state.role = scene.flags.role;
+    }
     if (scene.unlock) unlockChars(scene.unlock);
     if (scene.character) unlockChars([scene.character]);
 
@@ -123,7 +160,23 @@
     else if (scene.type === "faces") renderFaces(scene);
     else if (scene.type === "catalog") renderCatalog(scene);
     else if (scene.type === "dossier") renderDossier(scene);
+    else if (scene.type === "minigame") renderMinigame(scene);
     else renderStory(scene);
+  }
+
+  function renderMinigame(scene) {
+    MiniGames.render(
+      {
+        go,
+        state,
+        screen,
+        escapeHtml,
+        episodeLabel,
+        updateHud,
+        clampParanoia,
+      },
+      scene
+    );
   }
 
   function renderTitle() {
@@ -133,8 +186,8 @@
         <p class="kicker">Full Plot Adaptation // Tribute</p>
         <h1 class="hero-brand"><span>MANDELA COUNTY</span>КАТАЛОГ<br/>МАНДЕЛЫ</h1>
         <p class="lead">
-          Полный сюжет: Overcast → Vol.1 (Марк и Сезар) → Vol.2 (Адам и Джона) → падение округа.
-          Вы — оператор архива. Не смотрите дольше, чем нужно.
+          Сюжет идёт через обязательные протоколы: чтобы открыть следующую кассету,
+          нужно пройти мини-игру (взгляд, голос, дверь, рация, каталог…).
         </p>
         <div class="actions">
           <button class="primary" id="btn-start" type="button">▶ ПОЛНЫЙ СЮЖЕТ</button>
@@ -143,14 +196,15 @@
           <button id="btn-mute" type="button">ЗВУК: ВКЛ</button>
         </div>
         <div class="log">
-          Интерактивный пересказ сюжета The Mandela Catalogue (Alex Kister). Неофициальный трибьют.
-          Звуки — оригинальный Web Audio, не дорожки из сериала.
+          Мини-игры — не отдельный режим, а ворота сюжета. Провал меняет исход; часть протоколов нельзя пропустить.
+          Трибьют The Mandela Catalogue.
         </div>
       </section>
     `;
 
     document.getElementById("btn-start").onclick = async () => {
       await ArchiveAudio.start();
+      if (typeof Portraits !== "undefined") Portraits.warmup();
       state.startedAt = Date.now();
       state.flags = { run: "full" };
       Effects.glitchBurst(400);
@@ -269,7 +323,7 @@
         <h2 class="scene-title">${escapeHtml(ch.nameRu)}</h2>
         <div class="dossier">
           <div class="dossier__art">
-            <canvas id="dossier-canvas" width="180" height="240"></canvas>
+            <img class="portrait-photo" id="dossier-photo" width="180" height="240" alt="" />
             <div class="dossier__stamp ${ch.alternate ? "dossier__stamp--hot" : ""}">${
               ch.alternate ? "ALTERNATE?" : "HUMAN?"
             }</div>
@@ -289,7 +343,7 @@
         </div>
       </section>
     `;
-    Effects.drawPortrait(document.getElementById("dossier-canvas"), ch.seed, ch.alternate);
+    setPhotoEl(document.getElementById("dossier-photo"), ch, !!ch.alternate);
     document.getElementById("btn-next").onclick = () => go(scene.next);
   }
 
@@ -319,14 +373,14 @@
       card.type = "button";
       card.className = `catalog-card ${ch.alternate ? "is-alt" : ""}`;
       card.innerHTML = `
-        <canvas width="120" height="160"></canvas>
+        <img class="portrait-photo" width="120" height="160" alt="" />
         <div class="catalog-card__info">
           <strong>${escapeHtml(ch.nameRu)}</strong>
           <span>${escapeHtml(ch.name)}</span>
           <em>${escapeHtml(ch.status)}</em>
         </div>
       `;
-      Effects.drawPortrait(card.querySelector("canvas"), ch.seed, ch.alternate);
+      setPhotoEl(card.querySelector("img"), ch, !!ch.alternate);
       card.onclick = () => {
         if (ch.alternate) {
           ArchiveAudio.play("whisper");
@@ -351,7 +405,7 @@
   function characterChip(ch) {
     return `
       <div class="char-chip ${ch.alternate ? "is-alt" : ""}">
-        <canvas width="48" height="64" id="chip-${ch.id}"></canvas>
+        <img class="portrait-photo" width="48" height="64" id="chip-${ch.id}" alt="" />
         <div>
           <strong>${escapeHtml(ch.nameRu)}</strong>
           <span>${escapeHtml(ch.role)}</span>
@@ -361,10 +415,10 @@
   }
 
   function paintChips() {
-    document.querySelectorAll(".char-chip canvas").forEach((c) => {
-      const id = c.id.replace("chip-", "");
+    document.querySelectorAll(".char-chip img").forEach((el) => {
+      const id = el.id.replace("chip-", "");
       const ch = CHARACTERS[id];
-      if (ch) Effects.drawPortrait(c, ch.seed, ch.alternate);
+      if (ch) setPhotoEl(el, ch, !!ch.alternate);
     });
   }
 
@@ -410,13 +464,12 @@
       const charId = seeds[i];
       const ch = charId ? CHARACTERS[charId] : null;
       const seed = ch ? ch.seed + (hard ? i : i * 3) : hard ? baseSeed + i : baseSeed + i * 97;
-      // force alternate look on the correct pick; others human-ish
-      Effects.drawPortrait(canvas, seed, isAlt || !!(ch && ch.alternate && isAlt));
-      if (!isAlt && ch && ch.alternate) {
-        // show human version of disputed identity
-        Effects.drawPortrait(canvas, seed + 11, false);
+      // Real photos: human CRT grade vs Alternate grade
+      if (ch) {
+        paintPortrait(canvas, seed, isAlt, ch);
+      } else {
+        Effects.drawPortrait(canvas, seed, isAlt);
       }
-      if (isAlt) Effects.drawPortrait(canvas, seed + 77, true);
 
       btn.appendChild(canvas);
       const tag = document.createElement("div");
@@ -439,7 +492,8 @@
       Effects.glitchBurst(300);
       state.score += 1;
       state.faceStreak += 1;
-      log.textContent = "ВЕРНО. Аномалия изъята из каталога.";
+      state.flags.minigamesWon = (state.flags.minigamesWon || 0) + 1;
+      log.textContent = "ВЕРНО. ПРОТОКОЛ ПРОЙДЕН — СЮЖЕТ ДАЛЬШЕ.";
       setTimeout(() => go(scene.nextCorrect), 900);
     } else {
       btn.style.borderColor = "var(--danger)";
@@ -448,10 +502,16 @@
       state.paranoia += 1;
       state.score -= 1;
       state.faceStreak = 0;
+      state.flags.minigamesLost = (state.flags.minigamesLost || 0) + 1;
       clampParanoia();
       updateHud();
-      log.textContent = "ОШИБКА. Вы оставили Альтерната в файле.";
-      setTimeout(() => go(scene.nextWrong), 1100);
+      if (scene.retryOnFail) {
+        log.textContent = "ОШИБКА. ПОВТОРИТЕ СВЕРКУ — БЕЗ НЕЁ СЮЖЕТ НЕ ИДЁТ.";
+        setTimeout(() => go(state.scene), 1100);
+      } else {
+        log.textContent = "ОШИБКА. Альтернат остался в файле — сюжет идёт хуже.";
+        setTimeout(() => go(scene.nextWrong), 1100);
+      }
     }
   }
 
@@ -485,6 +545,7 @@
           <div>Очки выживания: ${state.score}</div>
           <div>Решений: ${state.choicesMade}</div>
           <div>Открыто досье: ${state.unlocked.size}/${CHARACTER_ORDER.length}</div>
+          <div>Мини-игры: ✓${state.flags.minigamesWon || 0} / ✗${state.flags.minigamesLost || 0}</div>
           <div>Ключевые флаги: ${escapeHtml(flagSummary() || "—")}</div>
           <div>Встречены: ${escapeHtml(metNames || "—")}</div>
         </div>
@@ -659,15 +720,19 @@
     tapeTime().textContent = `${h}:${m}:${s}`;
   }
 
+  const AMBIENT_VOICES = ["whisper", "presence", "murmur", "gibber", "static", "breath", "alternate"];
   setInterval(() => {
-    if (state.scene === "boot") return;
-    if (Math.random() < 0.08 + state.paranoia * 0.03) {
+    if (state.scene === "boot" || state.scene === "arcade") return;
+    if (Math.random() < 0.1 + state.paranoia * 0.04) {
       Effects.glitchBurst(180 + Math.random() * 220);
-      if (state.paranoia >= 3 && Math.random() < 0.2) {
-        ArchiveAudio.play(Math.random() < 0.5 ? "whisper" : "static");
+      if (state.paranoia >= 2 && Math.random() < 0.35) {
+        const cue = AMBIENT_VOICES[Math.floor(Math.random() * AMBIENT_VOICES.length)];
+        ArchiveAudio.play(cue);
+      } else if (state.paranoia >= 1 && Math.random() < 0.2) {
+        ArchiveAudio.play("static");
       }
     }
-  }, 5000);
+  }, 4500);
 
   setInterval(tickTape, 1000);
   render();
