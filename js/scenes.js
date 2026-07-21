@@ -1,4 +1,5 @@
-/* Narrative data — tribute inspired by Mandela Catalogue */
+/* Полная интерактивная адаптация сюжета The Mandela Catalogue (трибьют).
+   События пересказаны своими словами — не дословный скрипт сериала. */
 const SCENES = {
   boot: {
     type: "title",
@@ -6,56 +7,47 @@ const SCENES = {
     channel: "CH-00",
   },
 
-  intro_tape: {
-    type: "broadcast",
-    title: "ОБРАЗОВАТЕЛЬНАЯ ПЛЁНКА №3",
-    label: "APS // PUBLIC SAFETY",
-    sound: "emergency",
-    body:
-      "Если вы смотрите эту запись — значит, в округе Мандела снова зафиксирована активность.\n\nСущества, известные как АЛЬТЕРНАТЫ, имитируют голоса и лица знакомых вам людей.\n\nПравило первое: не смотрите им в глаза.\nПравило второе: не отвечайте незнакомым голосам за дверью.\nПравило третье: если сомневаетесь — вы уже опоздали.",
-    next: "catalog_intro",
-  },
-
-  catalog_intro: {
-    type: "catalog",
-    title: "КАТАЛОГ ЛИЦ ОК 1992",
-    text: "Перед сменой откройте досье. Некоторые карточки уже помечены красным.\nВыберите запись — или перейдите к дежурству.",
-    unlock: ["mark", "cesar", "thatcher", "gabriel", "alternate"],
-    next: "choose_role",
-    choices: [
-      { label: "К выбору роли ▶", next: "choose_role" },
-    ],
-  },
-
-  choose_role: {
+  /* ========== EPISODE SELECT ========== */
+  episode_select: {
     type: "story",
-    title: "Кто вы сегодня?",
+    title: "АРХИВ ЭПИЗОДОВ",
+    channel: "CH-00",
     sound: "tape",
     text:
-      "Ленты из архива 1992 года. Официально их не существует.\nНеофициально — кто-то должен их пересмотреть.\n\nНа столе — телефон без АОН, папка MCPD с именем Тэтчера Дэвиса и телевизор на седьмом канале.\nВ статике на секунду проявляется улыбка «Гавриила».",
-    unlock: ["thatcher", "gabriel"],
+      "Полный сюжет округа Мандела — в хронологии кассет.\n\nВы — оператор архива. Каждая лента — чей-то последний нормальный день.\nВыборы внутри эпизодов меняют, что попадёт в финальный каталог.",
     choices: [
       {
-        label: "Я — оператор горячей линии",
-        hint: "Звонок Марка. Голос Сезара.",
-        next: "operator_start",
-        flags: { role: "operator" },
+        label: "▶ С НАЧАЛА (полный сюжет)",
+        hint: "Overcast → Vol.1 → Vol.2 → Падение округа",
+        next: "ep0_overcast",
+        flags: { run: "full" },
       },
       {
-        label: "Я — один дома",
-        hint: "Три стука. Знакомый голос.",
-        next: "home_start",
-        flags: { role: "home" },
+        label: "Ep.0 — Overcast / «Гавриил»",
+        hint: "Ложный архангел. Первая ложь.",
+        next: "ep0_overcast",
+        flags: { run: "ep0" },
       },
       {
-        label: "Я — сотрудник архива",
-        hint: "Досье Адама, Джоны, Сары…",
-        next: "archive_start",
-        flags: { role: "archive" },
+        label: "Ep.1 — Vol.1 / Марк и Сезар",
+        hint: "Ночной звонок. Дверь. Альтернат.",
+        next: "ep1_cold",
+        flags: { run: "ep1" },
       },
       {
-        label: "Открыть полный каталог лиц",
-        hint: "Все досье округа",
+        label: "Ep.2 — Vol.2 / Адам и Джона",
+        hint: "Bythorne. Камера. Не разделяйтесь.",
+        next: "ep2_intro",
+        flags: { run: "ep2" },
+      },
+      {
+        label: "Ep.3 — Падение Манделы",
+        hint: "Тэтчер. Сара. Пустой округ.",
+        next: "ep3_intro",
+        flags: { run: "ep3" },
+      },
+      {
+        label: "Каталог лиц",
         next: "catalog_full",
       },
     ],
@@ -64,531 +56,763 @@ const SCENES = {
   catalog_full: {
     type: "catalog",
     title: "ПОЛНЫЙ АРХИВ ПЕРСОНАЛИЙ",
-    text: "Mandela County Archive — все доступные карточки.",
+    text: "Все карточки, связанные с делом округа Мандела.",
     unlock: ["mark", "cesar", "thatcher", "sarah", "adam", "jonah", "dave", "ruth", "gabriel", "alternate"],
     showAll: true,
-    next: "choose_role",
-    choices: [{ label: "Назад к выбору роли", next: "choose_role" }],
+    next: "episode_select",
+    choices: [{ label: "К списку эпизодов", next: "episode_select" }],
   },
 
-  /* ===== OPERATOR PATH ===== */
-  operator_start: {
+  /* =========================================================
+     EP.0 — OVERCAST / THE BEGINNING
+     ========================================================= */
+  ep0_overcast: {
+    type: "broadcast",
+    title: "OVERCAST",
+    label: "PRE-MANDELA // CLASSIFIED REEL",
+    channel: "CH-01",
+    sound: "think",
+    unlock: ["gabriel"],
+    body:
+      "До того как округ узнал слово «Альтернат», людям показали другую историю.\n\nНа плёнке — фигура, называющая себя Гавриилом.\nОна говорит мягко. Она просит вспомнить кого-то, кого вы любите.\n\nЭто не молитва.\nЭто взлом.",
+    next: "ep0_message",
+  },
+
+  ep0_message: {
     type: "story",
-    title: "ГОРЯЧАЯ ЛИНИЯ APS",
-    sound: "phone",
-    character: "ruth",
-    unlock: ["ruth"],
+    title: "ПОСЛАНИЕ",
+    channel: "CH-01",
+    sound: "gabriel",
+    character: "gabriel",
+    unlock: ["gabriel", "alternate"],
     text:
-      "Смена 02:14. На стене выцветшая инструкция и стикер Рут Уивер:\n«Не подтверждайте личность. Не называйте своё имя.»\n\nДисплей мигает: ВХОДЯЩИЙ — HEATHCLIFF, M.\n\nТелефон звонит.",
+      "«Гавриил» утверждает, что принёс истину.\nВ архивной расшифровке между кадрами — другая строка:\n\nОни всегда были здесь.\nРелигия, лица святых, голоса утешения — удобная маска.\n\nПервый инструмент Альтерната — не когти.\nЭто доверие.",
     choices: [
-      { label: "Поднять трубку (Марк Хитклифф?)", next: "op_mark_call" },
-      { label: "Подождать три гудка", next: "op_wait", paranoia: 1 },
+      {
+        label: "Смотреть плёнку дальше",
+        hint: "Think of someone you love…",
+        next: "ep0_think",
+        paranoia: 1,
+        flags: { watched_gabriel: true },
+      },
+      {
+        label: "Остановить воспроизведение",
+        hint: "Как велит поздний протокол APS",
+        next: "ep0_stop",
+        score: 1,
+        flags: { stopped_gabriel: true },
+      },
+      {
+        label: "Открыть досье «Гавриила»",
+        next: "dossier_gabriel_ep0",
+      },
     ],
   },
 
-  op_wait: {
-    type: "story",
-    title: "ТИШИНА",
-    sound: "breath",
-    text:
-      "Гудки обрываются на четвёртом.\nВ динамике — чужой вдох.\n\nПотом голос, почти как у Сезара Торреса:\n«Ты же знаешь, что я здесь.»",
-    unlock: ["cesar"],
-    onEnter: "glitch",
-    choices: [
-      { label: "Ответить: «Кто это?»", next: "op_mark_call", paranoia: 1 },
-      { label: "Открыть досье Сезара", next: "dossier_cesar_op" },
-    ],
-  },
-
-  dossier_cesar_op: {
+  dossier_gabriel_ep0: {
     type: "dossier",
-    character: "cesar",
-    sound: "whisper",
-    next: "op_mark_call",
+    character: "gabriel",
+    sound: "choir",
+    next: "ep0_think",
   },
 
-  op_mark_call: {
+  ep0_think: {
+    type: "story",
+    title: "THINK OF SOMEONE YOU LOVE",
+    channel: "CH-01",
+    sound: "think",
+    onEnter: "glitch",
+    text:
+      "Экран просит образ. Имя. Лицо.\nЧем яснее вы вспоминаете — тем точнее копия.\n\nВ статической сетке на секунду появляется улыбка:\nслишком широкая, глаза — пустые.\n\nТак начинается Каталог: не с монстра за дверью, а с мысли, которую вам разрешили подумать.",
+    paranoia: 1,
+    choices: [
+      { label: "Перейти к Vol.1 — округ Мандела", next: "ep0_to_vol1" },
+    ],
+  },
+
+  ep0_stop: {
+    type: "story",
+    title: "ВОСПРОИЗВЕДЕНИЕ ПРЕРВАНО",
+    channel: "CH-01",
+    sound: "tape",
+    text:
+      "Вы выключаете плёнку на полуслове.\nВ тишине всё равно слышен низкий хор — будто сигнал уже в комнате.\n\nНа этикетке кассеты чужой рукой:\n«ПОЗДНО. ОНИ УЖЕ ЗНАЮТ ИМЕНА.»",
+    choices: [
+      { label: "Перейти к Vol.1 — округ Мандела", next: "ep0_to_vol1" },
+    ],
+  },
+
+  ep0_to_vol1: {
+    type: "story",
+    title: "СВЯЗЬ ЭПИЗОДОВ",
+    channel: "CH-01",
+    sound: "emergency",
+    text:
+      "Годы спустя в округе Мандела начинают исчезать люди.\nПолиция ещё пишет «самоубийство», «пропал без вести».\n\nПотом звонит телефон в доме Марка Хитклиффа.\nНа линии — голос лучшего друга.",
+    choices: [
+      {
+        label: "▶ Vol.1 — Ночь Марка",
+        next: "ep1_cold",
+        flags: { role: "archive" },
+      },
+    ],
+  },
+
+  /* =========================================================
+     EP.1 — VOL.1 / MARK & CESAR
+     ========================================================= */
+  ep1_cold: {
+    type: "broadcast",
+    title: "MANDELA CATALOGUE — VOL.1",
+    label: "MCPD EVIDENCE // TAPE A",
+    channel: "CH-07",
+    sound: "emergency",
+    unlock: ["mark", "cesar", "thatcher"],
+    body:
+      "ОКРУГ МАНДЕЛА.\nНочь. Дом Марка Хитклиффа.\n\nДоказательная кассета изъята лейтенантом Тэтчером Дэвисом.\nСодержание: телефонные переговоры, домашнее видео, последствия визита.\n\nСубъект на линии представляется как CESAR TORRES.",
+    next: "ep1_phone",
+  },
+
+  ep1_phone: {
     type: "phone",
-    title: "ЗВОНОК // HEATHCLIFF",
-    from: "MARK HEATHCLIFF / ЛОКАЛЬНЫЙ",
-    line: "За дверью Сезар. Но Сезар… он говорит не так.",
+    title: "ЗВОНОК // CESAR TORRES",
+    from: "CESAR TORRES → MARK HEATHCLIFF",
+    line: "Марк… мне нужна помощь. Можно я приеду?",
+    channel: "CH-07",
     sound: "phone",
-    character: "mark",
+    character: "cesar",
     unlock: ["mark", "cesar"],
     text:
-      "Голос Марка срывается. На фоне — тихое царапанье.\n\n«Он просит впустить. Говорит, что замёрз. Говорит моим детским прозвищем — тем, которое знал только Сезар.»\n\nВ системе всплывает вторая карточка: CESAR TORRES — IDENTITY DISPUTED.",
+      "Вы слушаете запись с позиции Марка.\nГолос Сезара знаком — слишком знаком.\nВ паузах слышен чужой воздух, будто линия длиннее, чем должна быть.\n\nСезар просит впустить. Говорит, что ему плохо. Что он уже близко.",
     choices: [
       {
-        label: "«Не открывай. Отойди от двери.»",
-        next: "op_good_advice",
+        label: "Как Марк: не открывать, выяснить детали",
+        next: "ep1_question",
         score: 1,
+        flags: { mark_cautious: true },
       },
       {
-        label: "«Спроси то, что знает только настоящий Сезар.»",
-        next: "op_bad_advice",
+        label: "Как Марк: поверить другу и подойти к двери",
+        next: "ep1_door",
         paranoia: 1,
-      },
-      {
-        label: "«Опиши его лицо. Не смотри в глаза.»",
-        next: "op_face_ask",
-        paranoia: 2,
-        score: -1,
+        flags: { mark_trust: true },
       },
       {
         label: "Открыть досье Марка",
-        next: "dossier_mark_op",
+        next: "dossier_mark_ep1",
       },
     ],
   },
 
-  dossier_mark_op: {
+  dossier_mark_ep1: {
     type: "dossier",
     character: "mark",
-    sound: "tape",
-    next: "op_mark_call",
-  },
-
-  op_good_advice: {
-    type: "story",
-    title: "ПРАВИЛЬНЫЙ ПРОТОКОЛ",
-    sound: "scratch",
-    text:
-      "Марк отодвигается. Царапанье становится громче.\n\nЗатем — другой голос в трубке. Голос Сезара, но спокойный:\n«Спасибо, оператор. Теперь я знаю, на какой ты линии.»\n\nСвязь обрывается. В журнале Рут уже стоит пометка: TORRES — POSSIBLE TYPE TWO.",
-    unlock: ["ruth", "cesar"],
-    onEnter: "glitch",
-    paranoia: 1,
-    choices: [{ label: "Следующий вызов — Тэтчер Дэвис", next: "op_thatcher" }],
-  },
-
-  op_bad_advice: {
-    type: "story",
-    title: "ОШИБКА ОПЕРАТОРА",
-    sound: "door",
-    text:
-      "Марк спрашивает. За дверью отвечают правильно.\nСлишком правильно.\n\nЩелчок замка. Длинный выдох. Тишина.\nНа линии остаётся только хор, которого не должно быть в телефонной сети.",
-    onEnter: "sting",
-    paranoia: 2,
-    score: -1,
-    unlock: ["alternate"],
-    choices: [{ label: "Записать инцидент для Тэтчера", next: "op_thatcher" }],
-  },
-
-  op_face_ask: {
-    type: "story",
-    title: "НЕ СМОТРИТЕ",
-    sound: "face",
-    text:
-      "«У него глаза как ямы. Улыбка шире рта. Как на той плёнке с „Гавриилом“.»\n\nМарк замолкает.\nВ стекле монитора на секунду — чужое лицо.",
-    onEnter: "face",
-    paranoia: 2,
-    unlock: ["gabriel", "alternate"],
-    choices: [{ label: "Отвести взгляд. Вызов лейтенанта.", next: "op_thatcher" }],
-  },
-
-  op_thatcher: {
-    type: "phone",
-    title: "ВНУТРЕННИЙ // MCPD",
-    from: "LT. THATCHER DAVIS",
-    line: "Мне нужна сверка лиц. Сейчас. Партия с Торресом и Хитклиффом.",
-    sound: "phone",
-    character: "thatcher",
-    unlock: ["thatcher"],
-    text:
-      "Голос Тэтчера хриплый от бессонных смен.\n\n«Не спорь с кассетой. Если два портрета совпадают — один из них не человек. Отметь подмену и не смотри слишком долго.»",
-    choices: [
-      { label: "Открыть сверку лиц", next: "faces_op" },
-      { label: "Сначала досье Тэтчера", next: "dossier_thatcher_op" },
-      { label: "Положить трубку", next: "op_hangup", paranoia: 1, score: 1 },
-    ],
-  },
-
-  dossier_thatcher_op: {
-    type: "dossier",
-    character: "thatcher",
     sound: "heart",
-    next: "faces_op",
+    next: "ep1_question",
   },
 
-  op_hangup: {
-    type: "story",
-    title: "ОТКАЗ",
-    sound: "whisper",
-    text:
-      "Трубка на рычаге, но сквозь пластик всё ещё слышен шёпот Сезара.\nИз-под двери операторской ползёт полоска телевизионного снега.",
-    choices: [
-      { label: "Сверка на экране", next: "faces_op" },
-      { label: "Выйти в коридор", next: "corridor", paranoia: 1 },
-    ],
-  },
-
-  faces_op: {
-    type: "faces",
-    title: "ИДЕНТИФИКАЦИЯ // TORRES",
-    text: "Три карточки из дела Сезара Торреса.\nВыберите портрет, который НЕ должен существовать.",
-    characterSeeds: ["cesar", "mark", "thatcher"],
-    sound: "choir",
-    nextCorrect: "op_after_faces_ok",
-    nextWrong: "op_after_faces_bad",
-  },
-
-  op_after_faces_ok: {
-    type: "story",
-    title: "СОВПАДЕНИЕ НАЙДЕНО",
-    sound: "beepOk",
-    text:
-      "ПОДОЗРИТЕЛЬНЫЙ ОБРАЗЕЦ ИЗЪЯТ.\nТэтчер коротко: «Хорошо. Доживи до утра.»\n\nВ наушниках — один чужой хлопок.",
-    score: 2,
-    choices: [
-      { label: "Открыть каталог перед финалом", next: "catalog_mid" },
-      { label: "Дождаться утра", next: "ending_gate" },
-    ],
-  },
-
-  op_after_faces_bad: {
-    type: "story",
-    title: "ЛОЖНАЯ ИДЕНТИФИКАЦИЯ",
-    sound: "gabriel",
-    text:
-      "ОШИБКА КАТАЛОГА.\nВЫ ОТМЕТИЛИ ЧЕЛОВЕКА.\nАЛЬТЕРНАТ БЛАГОДАРИТ ВАС.\n\nНа экране на секунду — «Гавриил».",
-    onEnter: "face",
-    paranoia: 2,
-    score: -2,
-    unlock: ["gabriel"],
-    choices: [{ label: "Не оборачиваться", next: "ending_gate" }],
-  },
-
-  /* ===== HOME PATH ===== */
-  home_start: {
-    type: "story",
-    title: "ДОМ НА СИВЕРНОЙ",
-    sound: "knock",
-    text:
-      "Свет выключен час назад.\nПо ТВ раньше крутили ролик про «библейские аномалии» — тот самый, с улыбкой, которой нельзя смотреть.\n\nВ дверь стучат — ровно три раза.\nГолос как у матери:\n«Открой, я забыла ключи.»\n\nМать в другом городе. Вы говорили с ней два часа назад.",
-    unlock: ["gabriel", "alternate"],
-    choices: [
-      { label: "Спросить семейный код", next: "home_code", score: 1 },
-      { label: "Открыть дверь", next: "home_open", paranoia: 3, score: -2 },
-      { label: "Молчать и отойти", next: "home_silence", score: 1 },
-      { label: "Вспомнить плёнку про «Гавриила»", next: "dossier_gabriel_home" },
-    ],
-  },
-
-  dossier_gabriel_home: {
-    type: "dossier",
-    character: "gabriel",
-    sound: "think",
-    next: "home_code",
-  },
-
-  home_code: {
+  ep1_question: {
     type: "story",
     title: "ПРОВЕРКА",
+    channel: "CH-07",
     sound: "scratch",
+    character: "mark",
     text:
-      "Вы задаёте вопрос.\nЗа дверью отвечают мгновенно — и неправильно.\nПотом уже раздражённо, «правильным» голосом:\n\n«Зачем тебе код? Я же твоя мама.»\n\nЦарапанье к глазку. В голове всплывает строка с плёнки: Think of someone you love.",
+      "Марк не открывает сразу.\nОн спрашивает то, что должен знать только настоящий Сезар.\n\nОтветы приходят… правильные.\nИ всё же в них нет тепла. Только информация.\n\nЗа дверью — три стука.\nПотом голос снова:\n«Открой. Я же это ты.»",
+    unlock: ["alternate"],
+    choices: [
+      {
+        label: "Смотреть в глазок",
+        next: "ep1_peephole",
+        paranoia: 2,
+        flags: { looked_peephole: true },
+      },
+      {
+        label: "Не смотреть. Отойти. Записывать.",
+        next: "ep1_record",
+        score: 1,
+        flags: { recorded: true },
+      },
+      {
+        label: "Открыть дверь",
+        next: "ep1_open",
+        paranoia: 3,
+        score: -2,
+        flags: { opened_door: true },
+      },
+    ],
+  },
+
+  ep1_door: {
+    type: "story",
+    title: "У ДВЕРИ",
+    channel: "CH-07",
+    sound: "knock",
+    text:
+      "Марк подходит ближе.\nСквозь дерево — дыхание.\n\n«Пожалуйста.»\nГолос Сезара срывается в чужой регистр и возвращается обратно — как плохо настроенный приёмник.\n\nВ этот момент Марк ещё может отступить.",
+    choices: [
+      { label: "Отступить и не смотреть", next: "ep1_record", score: 1 },
+      { label: "Взглянуть в глазок", next: "ep1_peephole", paranoia: 2, flags: { looked_peephole: true } },
+      { label: "Открыть", next: "ep1_open", paranoia: 3, score: -2, flags: { opened_door: true } },
+    ],
+  },
+
+  ep1_peephole: {
+    type: "story",
+    title: "ГЛАЗОК",
+    channel: "CH-07",
+    sound: "face",
+    onEnter: "face",
+    unlock: ["cesar", "alternate"],
+    text:
+      "Рыбий глаз искажает крыльцо.\n«Сезар» улыбается.\nУлыбка шире лица. Глаза — ямы.\nПропорции чуть мимо — как у плохой копии, которую всё равно узнаёшь.\n\nЭто уже не друг.\nЭто то, что выучило друга.",
+    paranoia: 1,
+    choices: [
+      { label: "Захлопнуть взгляд. Бежать записывать.", next: "ep1_record", score: 1 },
+      { label: "Замереть от ужаса у двери", next: "ep1_terror", paranoia: 2 },
+    ],
+  },
+
+  ep1_open: {
+    type: "story",
+    title: "ДВЕРЬ ОТКРЫТА",
+    channel: "CH-07",
+    sound: "door",
+    onEnter: "sting",
+    unlock: ["alternate"],
+    text:
+      "На пороге — пауза.\nНикого «нормального».\n\nПотом присутствие входит само — без шагов, которые должны сопровождать тело.\nКамера Марка ловит помехи. Лицо в кадре не держит форму.\n\nВ отчёте MCPD это назовут «критическим проникновением».\nДля Марка это конец возможности притворяться, что друг ещё человек.",
+    paranoia: 1,
+    choices: [{ label: "Ночь внутри дома", next: "ep1_terror" }],
+  },
+
+  ep1_record: {
+    type: "story",
+    title: "ДОКАЗАТЕЛЬСТВА",
+    channel: "CH-07",
+    sound: "static",
+    character: "mark",
+    text:
+      "Марк включает камеру.\nШёпот за стенами. Тени не совпадают с источниками света.\nНа записи он повторяет себе, что устройство поможет — что реальность останется реальностью, если её снять.\n\nАльтернаты так не работают.\nЧем дольше смотришь — тем больше они становятся «правдой».",
+    choices: [
+      { label: "Пережить ночь", next: "ep1_terror" },
+    ],
+  },
+
+  ep1_terror: {
+    type: "story",
+    title: "Я ХОЧУ ПРОСНУТЬСЯ",
+    channel: "CH-07",
+    sound: "whisper",
+    character: "mark",
+    unlock: ["mark"],
+    text:
+      "Часы растягиваются.\nГолос Сезара то умоляет, то смеётся, то говорит из соседней комнаты, хотя дверь закрыта.\n\nМарк шепчет в камеру то, что потом назовут его последними словами:\nон хочет проснуться.\nОн больше не уверен, что сон — это сон.\n\nК утру дом тих.\nМарка находят мёртвым.\nОфициально — трагедия.\nНеофициально — образец №1 в каталоге.",
     onEnter: "glitch",
     paranoia: 1,
     choices: [
-      { label: "Посмотреть в глазок", next: "home_peephole", paranoia: 2 },
-      { label: "Запереться в ванной", next: "home_bathroom", score: 1 },
+      { label: "Досье Сезара Торреса", next: "dossier_cesar_ep1" },
+      { label: "Прибытие Тэтчера Дэвиса", next: "ep1_thatcher" },
     ],
   },
 
-  home_open: {
-    type: "story",
-    title: "ДВЕРЬ ОТКРЫТА",
-    sound: "door",
-    text:
-      "На пороге никого.\nЗапах мокрой земли и старого кинескопа.\n\nОбувь стоит носками наружу — вы так не ставите.\nВ зеркале отражение моргает позже вас.",
-    onEnter: "face",
-    paranoia: 3,
-    unlock: ["alternate"],
-    choices: [{ label: "Бежать к телефону", next: "home_call_911" }],
-  },
-
-  home_silence: {
-    type: "story",
-    title: "ОНИ НЕ УХОДЯТ",
-    sound: "knock",
-    text:
-      "Стучат снова. Уже вашим голосом:\n«Пусти меня. Мне холодно.»\n\nТелефон звонит сам — на дисплее ваше имя.\nВспоминается дело Марка Хитклиффа.",
-    unlock: ["mark"],
-    choices: [
-      { label: "Ответить на телефон", next: "home_call_911" },
-      { label: "Выдернуть шнур", next: "home_bathroom", score: 1 },
-    ],
-  },
-
-  home_peephole: {
-    type: "story",
-    title: "ГЛАЗОК",
-    sound: "face",
-    text:
-      "Рыбий глаз. Лица нет — только улыбка на высоте лица.\nГлаза чуть ниже, чем должны.\nКак у Альтерната типа II из каталога APS.",
-    onEnter: "face",
-    paranoia: 2,
-    unlock: ["alternate"],
-    choices: [{ label: "Отскочить", next: "home_bathroom" }],
-  },
-
-  home_bathroom: {
-    type: "story",
-    title: "ВАННАЯ",
-    sound: "whisper",
-    character: "sarah",
-    unlock: ["sarah"],
-    text:
-      "Вы запираетесь.\nВ зеркале — помехи.\nИз вентиляции шепчут:\n«Мы можем быть тем, кого ты любишь.»\n\nНа кафеле — чужая пометка от руки, похожая на почерк Сары Хитклифф из старого дела:\n«Брат не стал бы так улыбаться.»",
-    choices: [
-      { label: "Прочитать инструкцию APS", next: "home_rules", score: 1 },
-      { label: "Открыть досье Сары", next: "dossier_sarah_home" },
-      { label: "Разбить зеркало", next: "home_break", paranoia: 1 },
-    ],
-  },
-
-  dossier_sarah_home: {
+  dossier_cesar_ep1: {
     type: "dossier",
-    character: "sarah",
+    character: "cesar",
+    sound: "whisper",
+    next: "ep1_thatcher",
+  },
+
+  ep1_thatcher: {
+    type: "story",
+    title: "MCPD // LT. THATCHER DAVIS",
+    channel: "CH-07",
     sound: "heart",
-    next: "home_rules",
+    character: "thatcher",
+    unlock: ["thatcher", "ruth", "sarah"],
+    text:
+      "Лейтенант Тэтчер Дэвис входит в дом, когда уже поздно спасать.\nРут Уивер помогает фиксировать улики.\nСара Хитклифф — сестра — становится частью дела, которого полиция ещё не умеет называть.\n\nНа столе — кассеты Марка.\nНа стене — следы того, что не оставляют люди.\nТэтчер впервые по-настоящему видит: это не «культ» и не «истерия».",
+    choices: [
+      {
+        label: "Изучить учебную плёнку APS",
+        next: "ep1_aps",
+        score: 1,
+        flags: { learned_aps: true },
+      },
+      {
+        label: "Сверка лиц: кто из «Сезаров» настоящий",
+        next: "faces_cesar",
+      },
+    ],
   },
 
-  home_rules: {
+  ep1_aps: {
     type: "broadcast",
-    title: "НАПОМИНАНИЕ ДЛЯ НАСЕЛЕНИЯ",
-    label: "APS // EMERGENCY",
+    title: "APS — ЧТО ТАКОЕ АЛЬТЕРНАТ",
+    label: "US DEPT. // PUBLIC SAFETY TAPE",
+    channel: "CH-07",
     sound: "emergency",
+    unlock: ["alternate"],
     body:
-      "1. Не ведите диалог с Альтернатом.\n2. Не смотрите в глаза.\n3. Если Альтернат использует голос умершего — молитесь. Если использует ваш — бегите.\n4. Утро не гарантировано.\n\nДописка на обороте:\n«ЕСЛИ ТЫ ЧИТАЕШЬ ЭТО В ВАННОЙ — ОН УЖЕ В ДОМЕ.»",
-    next: "home_call_911",
+      "АЛЬТЕРНАТЫ — существа, имитирующие человека.\n\nТИП 1: копирует голос и манеры на расстоянии.\nТИП 2: принимает телесную форму; лицо всегда «чуть мимо».\nТИП 3: полностью замещает жертву в социальном поле.\n\nПРАВИЛА:\n1) Не вступайте в диалог.\n2) Не смотрите в глаза.\n3) Не открывайте дверь.\n4) Если оно знает ваше имя — оно уже выбрало вас.\n\nЕсли вы слышите голос умершего — это не чудо.",
+    next: "faces_cesar",
   },
 
-  home_break: {
-    type: "story",
-    title: "ОСКОЛКИ",
-    sound: "sting",
-    text:
-      "Зеркало осыпается.\nВ каждом осколке одно лицо — и ни одно не моргает синхронно.\nИз коридора — ваш смех с задержкой.",
-    onEnter: "sting",
-    paranoia: 2,
-    choices: [{ label: "Хватить телефон", next: "home_call_911" }],
-  },
-
-  home_call_911: {
-    type: "phone",
-    title: "911 / ПЕРЕАДРЕСАЦИЯ",
-    from: "MANDELA COUNTY DISPATCH",
-    line: "Служба спасения. Вы в безопасности? Назовите себя.",
-    sound: "phone",
-    character: "ruth",
-    unlock: ["ruth"],
-    text:
-      "Оператор слишком спокоен. На фоне — гул, как за вашей стеной.\nГолос почти как у Рут Уивер… или как у вас.\n\n«Опишите, кто в доме. Или опишите себя — чтобы мы знали, кого спасать.»",
-    choices: [
-      {
-        label: "Не описывать себя. Просить патруль.",
-        next: "faces_home",
-        score: 2,
-      },
-      {
-        label: "Назвать имя, адрес, приметы",
-        next: "home_gave_name",
-        paranoia: 2,
-        score: -2,
-      },
-    ],
-  },
-
-  home_gave_name: {
-    type: "story",
-    title: "ТЕПЕРЬ ОНИ ЗНАЮТ",
-    sound: "gabriel",
-    text:
-      "«Спасибо, — говорит оператор вашим голосом. — Мы уже внутри.»\nСвет мигает в ритме седьмого канала.",
-    onEnter: "face",
-    paranoia: 2,
-    choices: [{ label: "Сверка портретов на ТВ", next: "faces_home" }],
-  },
-
-  faces_home: {
+  faces_cesar: {
     type: "faces",
-    title: "КТО ИЗ НИХ — ВЫ?",
-    text: "Три портрета из досье APS. Один — подмена.\nНа этикетках мелькают имена Хитклифф / Торрес / ???",
-    characterSeeds: ["mark", "cesar", "alternate"],
+    title: "КАТАЛОГ // TORRES",
+    channel: "CH-07",
+    text:
+      "Три карточки из дела Vol.1.\nОдна — подмена. Отметьте Альтерната — так, как должен был сделать архив после смерти Марка.",
+    characterSeeds: ["cesar", "mark", "thatcher"],
     sound: "choir",
-    nextCorrect: "home_after_ok",
-    nextWrong: "home_after_bad",
+    nextCorrect: "ep1_faces_ok",
+    nextWrong: "ep1_faces_bad",
   },
 
-  home_after_ok: {
+  ep1_faces_ok: {
     type: "story",
-    title: "РАССВЕТ?",
-    sound: "tape",
-    text:
-      "Лишний портрет вычеркнут. Стуки стихают.\nЗа окном светлеет — но не с той стороны горизонта.",
+    title: "ВОЛ.1 — КАТАЛОГ ОБНОВЛЁН",
+    channel: "CH-07",
+    sound: "beepOk",
     score: 2,
+    text:
+      "Штамп: TYPE TWO — CESAR TORRES (DISPUTED).\nМарк Хитклифф — жертва.\nТэтчер уносит кассеты в участок.\n\nОкруг ещё жив.\nНо «Гавриил» уже добился главного: люди боятся друзей.",
     choices: [
-      { label: "Каталог перед выходом", next: "catalog_mid" },
-      { label: "Выйти на улицу", next: "ending_gate" },
+      {
+        label: "▶ Vol.2 — Bythorne (Адам и Джона)",
+        next: "ep2_intro",
+      },
+      {
+        label: "Сначала каталог лиц Vol.1",
+        next: "catalog_vol1",
+      },
     ],
   },
 
-  home_after_bad: {
+  ep1_faces_bad: {
     type: "story",
-    title: "ПОДМЕНА ПРИНЯТА",
-    sound: "sting",
-    text:
-      "Система подтверждает «верный» выбор.\nНастоящий портрет стёрт.\nВ осколках вас становится меньше.",
-    onEnter: "sting",
+    title: "ОШИБКА АРХИВА",
+    channel: "CH-07",
+    sound: "gabriel",
+    onEnter: "face",
     paranoia: 2,
     score: -2,
-    choices: [{ label: "Принять утро", next: "ending_gate" }],
-  },
-
-  /* ===== ARCHIVE PATH ===== */
-  archive_start: {
-    type: "story",
-    title: "АРХИВ ВРЕМЕННЫХ АНОМАЛИЙ",
-    sound: "tape",
-    character: "dave",
-    unlock: ["dave", "adam", "jonah"],
+    flags: { catalog_poisoned: true },
     text:
-      "Подвал администрации. Озон и пыль кассет.\nНа столе стикер Дейва Ли: «Не смотри ролик до конца.»\n\nПапки: MURRAY, A. / MARSHALL, J. / HEATHCLIFF, S.\nНадпись на двери: «НЕ РАБОТАТЬ ОДНОМУ ПОСЛЕ 01:00.»\n\nНа часах 01:07. Вы одни.",
+      "Вы отметили человека.\nАльтернат остаётся в базе как «гражданин».\n\nИменно так ложь расползается из Vol.1 дальше — в патрули, в звонки, в двери соседей.",
     choices: [
-      { label: "Сверка партии A", next: "faces_archive", score: 1 },
-      { label: "Учебная плёнка", next: "archive_tape" },
-      { label: "Досье Адама Мюррея", next: "dossier_adam" },
-      { label: "Досье Джоны Маршалла", next: "dossier_jonah" },
+      { label: "▶ Vol.2 — несмотря на ошибку", next: "ep2_intro" },
     ],
   },
 
-  dossier_adam: {
+  catalog_vol1: {
+    type: "catalog",
+    title: "КАТАЛОГ ПОСЛЕ VOL.1",
+    text: "Карточки, связанные с первой волной.",
+    unlock: ["mark", "cesar", "thatcher", "sarah", "ruth", "gabriel", "alternate"],
+    next: "ep2_intro",
+    choices: [{ label: "▶ Vol.2", next: "ep2_intro" }],
+  },
+
+  /* =========================================================
+     EP.2 — VOL.2 / ADAM & JONAH
+     ========================================================= */
+  ep2_intro: {
+    type: "broadcast",
+    title: "MANDELA CATALOGUE — VOL.2",
+    label: "BYTHORNE PARANORMAL SOCIETY",
+    channel: "CH-09",
+    sound: "static",
+    unlock: ["adam", "jonah", "dave"],
+    body:
+      "Спустя время после дела Хитклиффа.\nАдам Мюррей и Джона Маршалл снимают «паранормальное» для своих каналов и для людей вроде Дейва Ли, которые ещё верят, что это можно выложить онлайн и остаться в живых.\n\nОни едут в дом, откуда поступали жалобы.\nПравило, которое они нарушат: не разделяться.",
+    next: "ep2_choose",
+  },
+
+  ep2_choose: {
+    type: "story",
+    title: "ЧЬИМИ ГЛАЗАМИ",
+    channel: "CH-09",
+    sound: "tape",
+    text:
+      "Две рации. Одна камера.\nНочь вокруг Bythorne густая, как помехи.\n\nВыберите, чей канал архив держит основным.",
+    choices: [
+      {
+        label: "Адам Мюррей — камера вперёд",
+        hint: "Он хочет увидеть. Даже если нельзя.",
+        next: "ep2_house",
+        flags: { role: "adam", pov: "adam" },
+      },
+      {
+        label: "Джона Маршалл — держаться у рации",
+        hint: "Он хочет уйти. Рано.",
+        next: "ep2_house",
+        flags: { role: "jonah", pov: "jonah" },
+      },
+      {
+        label: "Досье Адама",
+        next: "dossier_adam_ep2",
+      },
+      {
+        label: "Досье Джоны",
+        next: "dossier_jonah_ep2",
+      },
+    ],
+  },
+
+  dossier_adam_ep2: {
     type: "dossier",
     character: "adam",
     sound: "static",
-    next: "archive_tape",
+    next: "ep2_house",
   },
 
-  dossier_jonah: {
+  dossier_jonah_ep2: {
     type: "dossier",
     character: "jonah",
     sound: "heart",
-    next: "archive_tape",
+    next: "ep2_house",
   },
 
-  archive_tape: {
-    type: "broadcast",
-    title: "ЧТО ТАКОЕ АЛЬТЕРНАТ",
-    label: "CLASSIFIED // REEL 12",
-    sound: "think",
-    body:
-      "Альтернат — не демон в старом смысле.\nЭто ошибка, которая хочет быть любимой.\n\nГолос копируется раньше лица.\nЛицо — всегда чуть мимо.\n\nЕсли в каталоге два одинаковых человека — один из них не человек.\nЕсли на плёнке улыбается «Гавриил» — остановите воспроизведение.",
-    unlock: ["gabriel", "alternate"],
-    next: "faces_archive",
-  },
-
-  faces_archive: {
-    type: "faces",
-    title: "ПАРТИЯ A — MURRAY / MARSHALL",
-    text: "Три карточки. Одна аномалия.\nКликните по Альтернату.",
-    characterSeeds: ["adam", "jonah", "dave"],
-    sound: "choir",
-    nextCorrect: "archive_mid_ok",
-    nextWrong: "archive_mid_bad",
-  },
-
-  archive_mid_ok: {
+  ep2_house: {
     type: "story",
-    title: "ПАРТИЯ A ЗАКРЫТА",
-    sound: "tape",
+    title: "ДОМ",
+    channel: "CH-09",
+    sound: "knock",
+    character: "adam",
+    unlock: ["adam", "jonah"],
     text:
-      "Штамп: КРАСНЫЙ УРОВЕНЬ.\nСоседний плеер сам перематывается.\nВ колонках: «Спасибо, что видишь разницу.» — голосом Джоны… или нет.",
-    score: 2,
-    unlock: ["jonah"],
+      "Дом встречает тишиной.\nАдам ведёт камеру по коридорам. Джона шепчет в рацию, что свет «неправильный».\n\nНа стене — детский рисунок. На полу — след, который не совпадает с обувью.\nВ дальнем углу темнеет фигура. Она не двигается — пока на неё смотрят.\n\nАдам: «Ты его видишь?»\nДжона: «Нам надо уходить.»",
     choices: [
-      { label: "Досье Дейва Ли", next: "dossier_dave" },
-      { label: "Партия B", next: "faces_archive_b" },
-      { label: "Коридор", next: "corridor" },
+      {
+        label: "Настоять: снимать дальше",
+        next: "ep2_deeper",
+        paranoia: 1,
+        flags: { pushed_deeper: true },
+      },
+      {
+        label: "Согласиться уходить",
+        next: "ep2_leave_try",
+        score: 1,
+        flags: { tried_leave: true },
+      },
+      {
+        label: "Разделиться: один к выходу, один к источнику",
+        next: "ep2_split",
+        paranoia: 2,
+        score: -1,
+        flags: { split: true },
+      },
     ],
   },
 
-  archive_mid_bad: {
+  ep2_leave_try: {
     type: "story",
-    title: "ШТАМП НЕ ТУДА",
-    sound: "scratch",
+    title: "ВЫХОД ЗАКРЫТ",
+    channel: "CH-09",
+    sound: "door",
     text:
-      "Карточка человека — в «УНИЧТОЖИТЬ».\nКарточка Альтерната — в «ЖИТЕЛЬ».\nЛифт скрежещет над вами, хотя здание закрыто.",
+      "Они разворачиваются к двери.\nРучка поддаётся — и тут же замирает, будто с другой стороны держат.\n\nИз темноты — голос одного из них, хотя оба молчат.\n«Останься. Нам ещё нужно, чтобы ты посмотрел.»",
     onEnter: "glitch",
-    paranoia: 2,
-    score: -1,
-    choices: [{ label: "Исправить во второй партии", next: "faces_archive_b" }],
+    choices: [{ label: "Углубиться — другого пути нет", next: "ep2_deeper" }],
   },
 
-  dossier_dave: {
+  ep2_split: {
+    type: "story",
+    title: "РАЗДЕЛЕНИЕ",
+    channel: "CH-09",
+    sound: "whisper",
+    character: "jonah",
+    text:
+      "Рация шипит.\nДжона остаётся у лестницы. Адам уходит в коридор с камерой.\n\nЧерез минуту голос Адама просит Джону «подойти ближе к углу».\nЧерез две — голос Адама просит того же… из двух мест сразу.\n\nДжона понимает: один из голосов — не Адам.",
+    paranoia: 1,
+    choices: [
+      {
+        label: "Джона зовёт настоящего по паролю",
+        next: "ep2_password",
+        score: 1,
+        flags: { used_password: true },
+      },
+      {
+        label: "Джона бежит на голос",
+        next: "ep2_jonah_runs",
+        paranoia: 2,
+        score: -1,
+      },
+    ],
+  },
+
+  ep2_password: {
+    type: "story",
+    title: "ПАРОЛЬ",
+    channel: "CH-09",
+    sound: "scratch",
+    text:
+      "Настоящий Адам отвечает с задержкой — человеком.\nЛожный отвечает идеально и сразу.\n\nОни снова вместе. Камера дрожит.\nВ конце коридора сущность больше не прячется: она хочет, чтобы её записали.",
+    choices: [{ label: "Смотреть в объектив", next: "ep2_deeper" }],
+  },
+
+  ep2_jonah_runs: {
+    type: "story",
+    title: "НЕ ТОТ ГОЛОС",
+    channel: "CH-09",
+    sound: "face",
+    onEnter: "face",
+    text:
+      "Джона находит «Адама» слишком быстро.\nУлыбка уже готова. Глаза — нет.\n\nКрик в рацию обрывается помехами.\nАдам (настоящий) слышит это слишком поздно.",
+    paranoia: 1,
+    flags: { jonah_hurt: true },
+    choices: [{ label: "Адам бежит на звук", next: "ep2_deeper" }],
+  },
+
+  ep2_deeper: {
+    type: "story",
+    title: "ОН В КАДРЕ",
+    channel: "CH-09",
+    sound: "gabriel",
+    onEnter: "glitch",
+    unlock: ["alternate", "gabriel"],
+    text:
+      "Камера ловит Альтерната целиком.\nРост человеческий. Лицо — ошибка. Присутствие — как у «Гавриила» на старой плёнке: оно хочет быть увиденным.\n\nАдам не отпускает запись.\nДжона умоляет выключить свет на объективе, выключить всё.\n\nВ этот миг решается больше, чем жизнь одного дома: что именно уйдёт в интернет, в архив Дейва, в головы зрителей.",
+    choices: [
+      {
+        label: "Продолжать снимать (как Адам)",
+        next: "ep2_film",
+        paranoia: 2,
+        flags: { filmed_alternate: true },
+      },
+      {
+        label: "Выключить камеру и тащить Джону к выходу",
+        next: "ep2_escape",
+        score: 2,
+        flags: { saved_focus: true },
+      },
+    ],
+  },
+
+  ep2_film: {
+    type: "story",
+    title: "ДОКАЗАТЕЛЬСТВО ЦЕНОЙ УМА",
+    channel: "CH-09",
+    sound: "choir",
+    character: "adam",
+    text:
+      "Плёнка получает то, за чем они приехали.\nИ что-то ещё: Адам смотрит слишком долго.\n\nПозже в архиве появятся версии, что Адам Мюррей после этой ночи уже не полностью «свой».\nКаталог любит таких — тех, кто сам открыл глаза.",
+    paranoia: 1,
+    flags: { adam_marked: true },
+    choices: [{ label: "Сверка лиц Bythorne", next: "faces_vol2" }],
+  },
+
+  ep2_escape: {
+    type: "story",
+    title: "ВЫНОС",
+    channel: "CH-09",
+    sound: "door",
+    character: "jonah",
+    text:
+      "Камера падает. Они бегут.\nЗа спиной — смех чужим горлом.\n\nНа улице воздух кажется настоящим только первые секунды.\nДжона жив. Адам молчит дольше, чем должен.\nРация в машине сама шепчет их именами.",
+    score: 1,
+    choices: [{ label: "Сверка лиц Bythorne", next: "faces_vol2" }],
+  },
+
+  faces_vol2: {
+    type: "faces",
+    title: "КАТАЛОГ // MURRAY–MARSHALL",
+    channel: "CH-09",
+    text: "Кто на записи — человек, а кто уже запись?\nОтметьте подмену.",
+    characterSeeds: ["adam", "jonah", "dave"],
+    hard: true,
+    sound: "whisper",
+    nextCorrect: "ep2_ok",
+    nextWrong: "ep2_bad",
+  },
+
+  ep2_ok: {
+    type: "story",
+    title: "VOL.2 — ФАЙЛ ЗАКРЫТ?",
+    channel: "CH-09",
+    sound: "beepOk",
+    score: 2,
+    text:
+      "Аномалия изъята из публичного каталога.\nНо копии плёнки уже ушли к тем, кто умеет их пересматривать.\n\nДейв Ли получит материал.\nТэтчер получит головную боль.\nОкруг Мандела получит следующую волну.",
+    unlock: ["dave"],
+    choices: [
+      { label: "▶ Ep.3 — Падение Манделы", next: "ep3_intro" },
+      { label: "Досье Дейва Ли", next: "dossier_dave_ep2" },
+    ],
+  },
+
+  ep2_bad: {
+    type: "story",
+    title: "ПОДМЕНА В ЭФИРЕ",
+    channel: "CH-09",
+    sound: "sting",
+    onEnter: "sting",
+    paranoia: 2,
+    score: -2,
+    flags: { catalog_poisoned: true },
+    text:
+      "Неверный портрет уходит в сеть как «настоящий».\nЗрители запоминают лицо.\nАльтернат получает аудиторию.",
+    choices: [{ label: "▶ Ep.3 — Падение Манделы", next: "ep3_intro" }],
+  },
+
+  dossier_dave_ep2: {
     type: "dossier",
     character: "dave",
     sound: "tape",
-    next: "faces_archive_b",
+    next: "ep3_intro",
   },
 
-  faces_archive_b: {
-    type: "faces",
-    title: "ПАРТИЯ B — СЕМЬЯ ХИТКЛИФФ",
-    text: "Отличия тоньше. Сара. Марк. И кто-то третий.",
-    hard: true,
-    characterSeeds: ["sarah", "mark", "cesar"],
-    sound: "whisper",
-    nextCorrect: "archive_after_ok",
-    nextWrong: "archive_after_bad",
+  /* =========================================================
+     EP.3 — AFTERMATH / FALL OF MANDELA
+     ========================================================= */
+  ep3_intro: {
+    type: "broadcast",
+    title: "ПОСЛЕ КАТАЛОГА",
+    label: "MANDELA COUNTY // COLLAPSE TIMELINE",
+    channel: "CH-13",
+    sound: "emergency",
+    unlock: ["thatcher", "sarah", "adam", "dave"],
+    body:
+      "Округ не падает за одну ночь.\nОн осыпается звонками, пустыми школами, отменёнными сменами MCPD.\n\nТэтчер Дэвис всё ещё ведет дела.\nСара Хитклифф живёт с дырой вместо брата.\nАдам Мюррей возвращается в материалы снова и снова — иногда как следователь, иногда как вопрос.\n\n«Гавриил» больше не прячется в одной кассете.",
+    next: "ep3_thatcher",
   },
 
-  archive_after_ok: {
+  ep3_thatcher: {
     type: "story",
-    title: "КАТАЛОГ ЦЕЛ",
-    sound: "beepOk",
+    title: "ЛЕЙТЕНАНТ БЕЗ ОК",
+    channel: "CH-13",
+    sound: "heart",
+    character: "thatcher",
+    unlock: ["thatcher", "ruth"],
     text:
-      "Две партии очищены.\nПринтер без запроса:\n«ОПЕРАТОР ПРИЗНАН ЧЕЛОВЕКОМ. ПОКА.»\n\nДверь архива закрыта снаружи.",
-    score: 2,
+      "Тэтчер смотрит сводки: исчезновения, «самоубийства», свидетели, которые потом сами становятся пропавшими.\nРут отмечает повторяющиеся голоса на линии 911.\n\nВ одном из отчётов — фраза, которую нельзя писать официально:\nокруг проигрывает войну, о которой нельзя сообщить населению целиком.",
     choices: [
-      { label: "Полный каталог", next: "catalog_mid" },
-      { label: "Ждать смену", next: "ending_gate" },
+      {
+        label: "Настоять на эвакуации / правде",
+        next: "ep3_truth",
+        score: 1,
+        flags: { push_truth: true },
+      },
+      {
+        label: "Продолжать тихие протоколы APS",
+        next: "ep3_protocol",
+        flags: { quiet_protocol: true },
+      },
+      {
+        label: "Досье Сары Хитклифф",
+        next: "dossier_sarah_ep3",
+      },
     ],
   },
 
-  archive_after_bad: {
+  dossier_sarah_ep3: {
+    type: "dossier",
+    character: "sarah",
+    sound: "think",
+    next: "ep3_sarah",
+  },
+
+  ep3_sarah: {
     type: "story",
-    title: "КАТАЛОГ ОТРАВЛЕН",
-    sound: "gabriel",
+    title: "САРА",
+    channel: "CH-13",
+    sound: "whisper",
+    character: "sarah",
+    unlock: ["sarah", "mark"],
     text:
-      "Ошибка записана как истина.\nЗавтра по этим карточкам сверят живых.\nВ темноте стеллажа кто-то учится вашей улыбке.",
+      "Сара знает: брат не улыбался бы так на последней записи.\nОна сверяет лица лучше иных операторов — потому что потеря научила.\n\nК ней приходят голоса «Марка».\nОна не открывает.\nИногда это единственная победа, которая ещё возможна.",
+    score: 1,
+    flags: { sarah_resists: true },
+    choices: [
+      { label: "Вернуться к Тэтчеру", next: "ep3_truth" },
+      { label: "Проверить Адама в архиве", next: "ep3_adam" },
+    ],
+  },
+
+  ep3_truth: {
+    type: "story",
+    title: "ПРАВДА НА ВОЗДУХЕ",
+    channel: "CH-13",
+    sound: "emergency",
+    text:
+      "Попытка сказать всё сразу ломает остатки порядка:\nкто-то верит, кто-то паникует, кто-то открывает дверь «родственнику», которого видел минуту назад по ТВ.\n\nАльтернаты питаются паникой так же охотно, как тишиной.\nТэтчер это понимает слишком поздно.",
+    paranoia: 1,
+    choices: [{ label: "Адам в материалах дела", next: "ep3_adam" }],
+  },
+
+  ep3_protocol: {
+    type: "story",
+    title: "ТИХИЙ ПРОТОКОЛ",
+    channel: "CH-13",
+    sound: "tape",
+    text:
+      "Инструкции. Штампы. Ночные изъятия кассет.\nГород усыпляют полуправдой.\n\nЭто сохраняет улицы на недели дольше.\nИ делает финальный обвал глуше — когда уже некого эвакуировать.",
+    choices: [{ label: "Адам в материалах дела", next: "ep3_adam" }],
+  },
+
+  ep3_adam: {
+    type: "story",
+    title: "ВОПРОС МЮРРЕЯ",
+    channel: "CH-13",
+    sound: "static",
+    character: "adam",
+    unlock: ["adam", "jonah"],
+    text:
+      "В поздних томах архива Адам — не просто оператор камеры.\nЕго прошлое, его «удача» в встречах с Альтернатами, его взгляд в объектив становятся предметом сверки.\n\nДжона в записях всё чаще звучит как тот, кто сомневался правильно.\nАдам — как тот, кого сомнение не спасло.\n\nКаталог задаёт вопрос без ответа на бумаге:\nкогда человек перестаёт быть собой — в момент подмены или в момент, когда соглашается смотреть?",
+    choices: [
+      {
+        label: "Считать Адама скомпрометированным",
+        next: "faces_final",
+        flags: { adam_suspect: true },
+        paranoia: 1,
+      },
+      {
+        label: "Считать Адама жертвой, как Марка",
+        next: "faces_final",
+        flags: { adam_victim: true },
+        score: 1,
+      },
+    ],
+  },
+
+  faces_final: {
+    type: "faces",
+    title: "ФИНАЛЬНАЯ СВЕРКА",
+    channel: "CH-13",
+    text:
+      "Последняя партия карточек округа.\nОдна из них не должна пережить рассвет.",
+    characterSeeds: ["gabriel", "alternate", "thatcher"],
+    hard: true,
+    sound: "gabriel",
+    nextCorrect: "ep3_collapse",
+    nextWrong: "ep3_replaced",
+  },
+
+  ep3_collapse: {
+    type: "story",
+    title: "ОКРУГ МАНДЕЛА",
+    channel: "CH-13",
+    sound: "choir",
+    score: 1,
+    text:
+      "Вы верно изымаете аномалию из финального файла.\nЭто ничего не откатывает.\n\nШколы пусты. Частоты полиции шипят именами мёртвых.\nНа дорожных щитах — помехи вместо указателей.\n\nКаталог завершён не потому, что зло побеждено —\nа потому что почти некого каталогизировать.",
+    choices: [{ label: "КОНЕЦ ЗАПИСИ", next: "ending_gate" }],
+  },
+
+  ep3_replaced: {
+    type: "story",
+    title: "ВЫ В КАТАЛОГЕ",
+    channel: "CH-13",
+    sound: "face",
     onEnter: "face",
     paranoia: 2,
     score: -2,
-    choices: [{ label: "Покинуть архив", next: "corridor" }],
-  },
-
-  catalog_mid: {
-    type: "catalog",
-    title: "ОБНОВЛЁННЫЙ КАТАЛОГ",
-    text: "Новые совпадения добавлены в вашу смену.",
-    next: "ending_gate",
-    choices: [{ label: "Завершить смену ▶", next: "ending_gate" }],
-  },
-
-  corridor: {
-    type: "story",
-    title: "КОРИДОР",
-    sound: "gabriel",
+    flags: { operator_replaced: true },
     text:
-      "Лампы мигают морзянкой.\nВ конце — силуэт ростом с вас. Машет, как машете вы.\n\nЗа спиной открывается дверь.\nНа мгновение слышен хор и голос «Гавриила».",
-    onEnter: "glitch",
-    paranoia: 1,
-    unlock: ["gabriel", "alternate"],
-    choices: [
-      { label: "Идти к силуэту", next: "ending_gate", paranoia: 2, score: -1 },
-      { label: "Закрыть глаза и стоять", next: "ending_gate", score: 1 },
-      { label: "Последний взгляд в каталог", next: "catalog_mid" },
-    ],
+      "Ошибка оператора.\nВаша карточка автоматически создаётся в системе:\nимя с терминала, лицо с вебкамеры, статус — ACTIVE RESIDENT.\n\n«Гавриил» в помехах благодарит за внимание.",
+    choices: [{ label: "КОНЕЦ ЗАПИСИ", next: "ending_gate" }],
   },
 
   ending_gate: {

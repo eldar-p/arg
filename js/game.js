@@ -130,20 +130,21 @@
     updateHud("ВСТАВЬТЕ КАССЕТУ", "CH-00");
     screen().innerHTML = `
       <section class="panel">
-        <p class="kicker">Analog Horror Interactive // Tribute</p>
+        <p class="kicker">Full Plot Adaptation // Tribute</p>
         <h1 class="hero-brand"><span>MANDELA COUNTY</span>КАТАЛОГ<br/>МАНДЕЛЫ</h1>
         <p class="lead">
-          Локальный архив экстренных плёнок. Марк, Сезар, Тэтчер, «Гавриил» —
-          голоса и лица, которым нельзя верить.
+          Полный сюжет: Overcast → Vol.1 (Марк и Сезар) → Vol.2 (Адам и Джона) → падение округа.
+          Вы — оператор архива. Не смотрите дольше, чем нужно.
         </p>
         <div class="actions">
-          <button class="primary" id="btn-start" type="button">▶ ВОСПРОИЗВЕСТИ</button>
+          <button class="primary" id="btn-start" type="button">▶ ПОЛНЫЙ СЮЖЕТ</button>
+          <button id="btn-episodes" type="button">ЭПИЗОДЫ</button>
           <button id="btn-catalog" type="button">КАТАЛОГ ЛИЦ</button>
           <button id="btn-mute" type="button">ЗВУК: ВКЛ</button>
         </div>
         <div class="log">
-          Звуки синтезированы в браузере (хор, стук, шёпот, телефон, EAS) — это не аудиодорожки из сериала.
-          Персонажи — трибьют по мотивам The Mandela Catalogue (Alex Kister).
+          Интерактивный пересказ сюжета The Mandela Catalogue (Alex Kister). Неофициальный трибьют.
+          Звуки — оригинальный Web Audio, не дорожки из сериала.
         </div>
       </section>
     `;
@@ -151,8 +152,16 @@
     document.getElementById("btn-start").onclick = async () => {
       await ArchiveAudio.start();
       state.startedAt = Date.now();
+      state.flags = { run: "full" };
       Effects.glitchBurst(400);
-      go("intro_tape");
+      go("ep0_overcast");
+    };
+
+    document.getElementById("btn-episodes").onclick = async () => {
+      await ArchiveAudio.start();
+      state.startedAt = Date.now();
+      ArchiveAudio.play("tape");
+      go("episode_select");
     };
 
     document.getElementById("btn-catalog").onclick = async () => {
@@ -171,9 +180,10 @@
   }
 
   function renderBroadcast(scene) {
+    const ep = episodeLabel(scene.channel || "CH-00");
     screen().innerHTML = `
       <section class="panel">
-        <p class="kicker">Трансляция</p>
+        <p class="kicker">${ep} // Трансляция</p>
         <h2 class="scene-title">${escapeHtml(scene.title)}</h2>
         <div class="tape-frame">
           <div class="tape-frame__label">${escapeHtml(scene.label || "APS")}</div>
@@ -191,11 +201,24 @@
     document.getElementById("btn-next").onclick = () => go(scene.next);
   }
 
+  function episodeLabel(channel) {
+    return (
+      {
+        "CH-01": "EP.0 OVERCAST",
+        "CH-07": "EP.1 VOL.1",
+        "CH-09": "EP.2 VOL.2",
+        "CH-13": "EP.3 COLLAPSE",
+        "CH-00": "АРХИВ",
+      }[channel] || "ЗАПИСЬ"
+    );
+  }
+
   function renderStory(scene) {
     const char = scene.character ? CHARACTERS[scene.character] : null;
+    const ep = episodeLabel(scene.channel || "CH-00");
     screen().innerHTML = `
       <section class="panel">
-        <p class="kicker">${state.role ? `РОЛЬ: ${roleLabel(state.role)}` : "ЗАПИСЬ"}${
+        <p class="kicker">${ep}${state.role ? ` // ${roleLabel(state.role)}` : ""}${
           char ? ` // ${escapeHtml(char.nameRu)}` : ""
         }</p>
         <h2 class="scene-title">${escapeHtml(scene.title)}</h2>
@@ -212,9 +235,10 @@
 
   function renderPhone(scene) {
     const char = scene.character ? CHARACTERS[scene.character] : null;
+    const ep = episodeLabel(scene.channel || "CH-07");
     screen().innerHTML = `
       <section class="panel">
-        <p class="kicker">Входящий сигнал${char ? ` // ${escapeHtml(char.name)}` : ""}</p>
+        <p class="kicker">${ep} // Входящий сигнал${char ? ` // ${escapeHtml(char.name)}` : ""}</p>
         <h2 class="scene-title">${escapeHtml(scene.title || "ЗВОНОК")}</h2>
         ${char ? characterChip(char) : ""}
         <div class="phone">
@@ -368,7 +392,7 @@
 
     screen().innerHTML = `
       <section class="panel">
-        <p class="kicker">Каталог лиц // сверка</p>
+        <p class="kicker">${episodeLabel(scene.channel || "CH-00")} // сверка лиц</p>
         <h2 class="scene-title">${escapeHtml(scene.title)}</h2>
         <p class="prose">${escapeHtml(scene.text)}</p>
         <div class="faces" id="faces"></div>
@@ -456,20 +480,22 @@
         <h1 class="hero-brand"><span>КОНЕЦ ЗАПИСИ</span>${escapeHtml(ending.title)}</h1>
         <p class="prose">${escapeHtml(ending.text)}</p>
         <div class="stats">
-          <div>Роль: ${roleLabel(state.role) || "—"}</div>
+          <div>POV / роль: ${roleLabel(state.role) || "Оператор архива"}</div>
           <div>Паранойя: ${state.paranoia}/5</div>
           <div>Очки выживания: ${state.score}</div>
           <div>Решений: ${state.choicesMade}</div>
           <div>Открыто досье: ${state.unlocked.size}/${CHARACTER_ORDER.length}</div>
+          <div>Ключевые флаги: ${escapeHtml(flagSummary() || "—")}</div>
           <div>Встречены: ${escapeHtml(metNames || "—")}</div>
         </div>
         <div class="actions">
           <button class="primary" id="btn-restart" type="button">ПЕРЕМОТАТЬ КАССЕТУ</button>
+          <button id="btn-end-episodes" type="button">ЭПИЗОДЫ</button>
           <button id="btn-end-catalog" type="button">КАТАЛОГ ЛИЦ</button>
           <button id="btn-mute-end" type="button">${ArchiveAudio.muted ? "ЗВУК: ВЫКЛ" : "ЗВУК: ВКЛ"}</button>
         </div>
         <div class="log">
-          Звуки оригинальные (Web Audio). Персонажи — неофициальный трибьют Mandela Catalogue.
+          Полный сюжетный трибьют Mandela Catalogue. Звуки — Web Audio.
         </div>
       </section>
     `;
@@ -496,64 +522,104 @@
       go("catalog_full");
     };
 
+    document.getElementById("btn-end-episodes").onclick = () => go("episode_select");
+
     document.getElementById("btn-mute-end").onclick = (e) => {
       const muted = ArchiveAudio.toggleMute();
       e.currentTarget.textContent = muted ? "ЗВУК: ВЫКЛ" : "ЗВУК: ВКЛ";
     };
   }
 
+  function flagSummary() {
+    const f = state.flags;
+    const bits = [];
+    if (f.opened_door) bits.push("дверь открыта");
+    if (f.looked_peephole) bits.push("глазок");
+    if (f.watched_gabriel) bits.push("смотрели «Гавриила»");
+    if (f.stopped_gabriel) bits.push("остановили плёнку");
+    if (f.split) bits.push("разделение");
+    if (f.filmed_alternate) bits.push("сняли Альтерната");
+    if (f.jonah_hurt) bits.push("Джона ранен");
+    if (f.adam_marked || f.adam_suspect) bits.push("Адам под вопросом");
+    if (f.catalog_poisoned) bits.push("каталог отравлен");
+    if (f.operator_replaced) bits.push("оператор заменён");
+    if (f.sarah_resists) bits.push("Сара держится");
+    return bits.join(", ");
+  }
+
   function resolveEnding() {
     const p = state.paranoia;
     const s = state.score;
+    const f = state.flags;
 
-    if (p >= 5 || s <= -3) {
+    if (f.operator_replaced || p >= 5 || s <= -4) {
       return {
         bad: true,
-        code: "ENDING // REPLACED",
-        title: "ВЫ БОЛЬШЕ НЕ ОДНИ",
+        code: "ENDING // CATALOGUED",
+        title: "НОВАЯ КАРТОЧКА",
         text:
-          "Утром соседи скажут, что вы вышли поздороваться.\nГолос будет ваш. Улыбка — почти как у Сезара на второй карточке.\nВ каталоге новая запись: ваше имя, чужие глаза.",
+          "Архив автоматически заводит на вас досье.\nИмя с терминала. Лицо с вебкамеры. Статус: ACTIVE RESIDENT.\n\nКак у Сезара после подмены — две версии правды, и официальной становится ложная.\n«Гавриил» в помехах шепчет спасибо, что досмотрели до конца.",
       };
     }
 
-    if (s >= 4 && p <= 2) {
-      return {
-        bad: false,
-        code: "ENDING // CONTAINED",
-        title: "ДОЖИТЬ ДО СМЕНЫ",
-        text:
-          "Тэтчер Дэвис не звонит с благодарностью — только короткий тон на линии.\nКассета останавливается на инструкции APS.\nЭто не победа. Это отсрочка.",
-      };
-    }
-
-    if (state.role === "archive" && s >= 2) {
-      return {
-        bad: false,
-        code: "ENDING // ARCHIVIST",
-        title: "КАТАЛОГ ДЕРЖИТСЯ",
-        text:
-          "Папки Мюррея и Маршалла закрыты.\n«Гавриил» не получил ваш взгляд дольше секунды.\nМонитор гаснет. Отражение — с задержкой.",
-      };
-    }
-
-    if (state.role === "home" && p >= 3) {
+    if (f.opened_door && f.filmed_alternate && f.catalog_poisoned) {
       return {
         bad: true,
-        code: "ENDING // THRESHOLD",
-        title: "ОНИ ЗНАЛИ КОД",
+        code: "ENDING // MANDELA FALLS",
+        title: "ОКРУГ СТЁРТ",
         text:
-          "На кухне вторая кружка.\nКто-то напевает ту же мелодию, что в образовательной плёнке — чуть медленнее.\nThink of someone you love.",
+          "Дверь Марка. Объектив Адама. Ошибка в каталоге.\nТри классических провала сюжета складываются в один финал:\nМандела пустеет, частоты полиции отвечают голосами мёртвых, а учебная плёнка APS крутится по кругу без зрителей.\n\nКаталог завершён. Победителей нет.",
+      };
+    }
+
+    if (f.saved_focus && f.sarah_resists && s >= 4 && !f.catalog_poisoned) {
+      return {
+        bad: false,
+        code: "ENDING // HOLD THE LINE",
+        title: "ДЕРЖАТЬ ЛИНИЮ",
+        text:
+          "Вы не открыли лишнего.\nДжону вытащили. Сара не впустила «брата». Каталог хотя бы раз отметил правильно.\n\nОкруг всё равно ранен — сюжет Mandela Catalogue не обещает хэппи-энд.\nНо на одной полке архива ещё есть кассеты, которые не лгут. Пока.",
+      };
+    }
+
+    if (f.adam_marked || f.adam_suspect) {
+      return {
+        bad: true,
+        code: "ENDING // MURRAY QUESTION",
+        title: "ВОПРОС БЕЗ ОТВЕТА",
+        text:
+          "Адам Мюррей остаётся в файле как трещина:\nохотник, свидетель… или уже содержимое кадра.\n\nДжона в рации повторяет: «Нам надо уходить.»\nУходить уже некуда. Округ Мандела становится названием на старой карте.",
+      };
+    }
+
+    if (f.watched_gabriel && p >= 3) {
+      return {
+        bad: true,
+        code: "ENDING // THINK OF SOMEONE",
+        title: "ВЫ ВСПОМНИЛИ",
+        text:
+          "Overcast сработал.\nТот, кого вы любите, теперь умеет звонить из темноты.\nVol.1 и Vol.2 были только примерами.\nВаш пример — следующий.",
+      };
+    }
+
+    if (s >= 3 && p <= 2) {
+      return {
+        bad: false,
+        code: "ENDING // WITNESS",
+        title: "СВИДЕТЕЛЬ АРХИВА",
+        text:
+          "Вы прошли сюжет от ложного Гавриила до пустого округа и не отдали каталог целиком.\nМарк мёртв. Сезар — подмена. Адам и Джона — шрам на плёнке. Тэтчер — без страны, которую можно спасти.\n\nЭто канонический холод Mandela Catalogue: понять всё — не значит победить.",
       };
     }
 
     return {
       bad: p >= 3,
-      code: p >= 3 ? "ENDING // UNCERTAIN" : "ENDING // STATIC",
-      title: p >= 3 ? "СИГНАЛ РАЗДВОИЛСЯ" : "ШУМ НА ЛЕНТЕ",
+      code: p >= 3 ? "ENDING // STATIC GOSPEL" : "ENDING // TAPE ENDS",
+      title: p >= 3 ? "ЕВАНГЕЛИЕ ПОМЕХ" : "ЛЕНТА КОНЧАЕТСЯ",
       text:
         p >= 3
-          ? "Вы живы. Наверное.\nГолос в следующей записи ниже на полтона — как у Марка в последнем звонке.\nФайл: повторная сверка."
-          : "Помехи съедают финал.\nНа этикетке: «не перематывать в одиночестве».\nСедьмой канал ещё секунду светится.",
+          ? "Сюжет сошёлся в шум.\n«Гавриил», Марк, Адам — все голоса говорят разом.\nВы выключаете монитор. Отражение моргает позже."
+          : "Кассеты перемотаны.\nOvercast. Vol.1. Vol.2. Падение.\nНа этикетке дописка: «не пересказывать вслух ночью».\nСедьмой канал гаснет последним.",
     };
   }
 
@@ -562,8 +628,10 @@
       {
         operator: "Оператор линии",
         home: "Один дома",
-        archive: "Архивариус",
-      }[role] || ""
+        archive: "Оператор архива",
+        adam: "POV: Адам",
+        jonah: "POV: Джона",
+      }[role] || role || ""
     );
   }
 
