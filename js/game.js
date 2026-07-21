@@ -686,15 +686,19 @@
     tapeTime().textContent = `${h}:${m}:${s}`;
   }
 
+  const AMBIENT_VOICES = ["whisper", "presence", "murmur", "gibber", "static", "breath", "alternate"];
   setInterval(() => {
-    if (state.scene === "boot") return;
-    if (Math.random() < 0.08 + state.paranoia * 0.03) {
+    if (state.scene === "boot" || state.scene === "arcade") return;
+    if (Math.random() < 0.1 + state.paranoia * 0.04) {
       Effects.glitchBurst(180 + Math.random() * 220);
-      if (state.paranoia >= 3 && Math.random() < 0.2) {
-        ArchiveAudio.play(Math.random() < 0.5 ? "whisper" : "static");
+      if (state.paranoia >= 2 && Math.random() < 0.35) {
+        const cue = AMBIENT_VOICES[Math.floor(Math.random() * AMBIENT_VOICES.length)];
+        ArchiveAudio.play(cue);
+      } else if (state.paranoia >= 1 && Math.random() < 0.2) {
+        ArchiveAudio.play("static");
       }
     }
-  }, 5000);
+  }, 4500);
 
   setInterval(tickTape, 1000);
   render();

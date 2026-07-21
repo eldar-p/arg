@@ -124,7 +124,7 @@ const MiniGames = (() => {
 
     const canvas = document.getElementById("mg-face");
     Effects.drawPortrait(canvas, scene.seed || 9999, true);
-    ArchiveAudio.play("gabriel");
+    ArchiveAudio.play("angel");
 
     let gaze = 0;
     let over = false;
@@ -177,7 +177,7 @@ const MiniGames = (() => {
       `<p class="mg-prompt">${api.escapeHtml(round.prompt)}</p>
        <div class="choices" id="mg-choices"></div>`
     );
-    ArchiveAudio.play("phone");
+    ArchiveAudio.play("speak");
     const box = document.getElementById("mg-choices");
     opts.forEach((o) => {
       const btn = document.createElement("button");
@@ -229,6 +229,7 @@ const MiniGames = (() => {
       </div>`
     );
     ArchiveAudio.play("knock");
+    setTimeout(() => ArchiveAudio.play("presence"), 500);
     const pulse = document.getElementById("mg-pulse");
     let n = 0;
     const knockAnim = setInterval(() => {
@@ -322,7 +323,7 @@ const MiniGames = (() => {
         <p class="mg-prompt">Кликайте человеческие метки. Ловушки (LOOK / OPEN / LOVE…) — не трогать.</p>
       </div>`
     );
-    ArchiveAudio.play("static");
+    ArchiveAudio.play("radio");
 
     const stream = document.getElementById("mg-stream");
     let active = true;

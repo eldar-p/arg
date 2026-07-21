@@ -62,9 +62,9 @@ const SCENES = {
     type: "story",
     title: "ARCADE // ПРОТОКОЛЫ",
     channel: "CH-00",
-    sound: "tape",
+    sound: "vhs",
     text:
-      "Тренировочные модули архива.\nПоражение повышает паранойю. Победа — очки выживания.\nВыберите протокол.",
+      "Тренировочные модули архива.\nПоражение повышает паранойю. Победа — очки выживания.\nВыберите протокол или прослушайте «голоса» без слов.",
     choices: [
       { label: "Не смотри в глаза", next: "arcade_lookaway" },
       { label: "Чей голос — подмена?", next: "arcade_voice" },
@@ -72,8 +72,66 @@ const SCENES = {
       { label: "Память каталога", next: "arcade_memory" },
       { label: "Рация / статика", next: "arcade_static" },
       { label: "Тест APS", next: "arcade_quiz" },
+      { label: "Проба звука: псевдоречь", next: "arcade_voices" },
       { label: "Назад к эпизодам", next: "episode_select" },
     ],
+  },
+
+  arcade_voices: {
+    type: "story",
+    title: "ГОЛОСА БЕЗ СЛОВ",
+    channel: "CH-00",
+    sound: "speak",
+    text:
+      "Синтез формант: будто кто-то говорит — но слогов нет.\nЧеловек → помехи → Альтернат → «Гавриил».\nЭто не дорожки из сериала, а оригинальная псевдоречь.",
+    choices: [
+      { label: "Ещё раз (speak)", next: "arcade_voices", flags: {} },
+      { label: "Ангельский слой", next: "arcade_voices_angel" },
+      { label: "Смех / плач", next: "arcade_voices_emote" },
+      { label: "Назад в Arcade", next: "arcade" },
+    ],
+  },
+
+  arcade_voices_angel: {
+    type: "story",
+    title: "СЛОЙ «ГАВРИИЛА»",
+    channel: "CH-00",
+    sound: "angel",
+    text: "Высокие гласные без смысла. Хор. Шёпот.",
+    choices: [
+      { label: "Присутствие в стенах", next: "arcade_voices_presence" },
+      { label: "Назад", next: "arcade_voices" },
+    ],
+  },
+
+  arcade_voices_emote: {
+    type: "story",
+    title: "БЕЗЪЯЗЫКИЙ СМЕХ",
+    channel: "CH-00",
+    sound: "laugh",
+    text: "Сначала смех. Потом — срыв в плач.",
+    choices: [
+      { label: "Плач", next: "arcade_voices_cry" },
+      { label: "Назад", next: "arcade_voices" },
+    ],
+  },
+
+  arcade_voices_cry: {
+    type: "story",
+    title: "СРЫВ",
+    channel: "CH-00",
+    sound: "cry",
+    text: "…",
+    choices: [{ label: "Назад к голосам", next: "arcade_voices" }],
+  },
+
+  arcade_voices_presence: {
+    type: "story",
+    title: "КТО-ТО ЗА СТЕНКОЙ",
+    channel: "CH-00",
+    sound: "presence",
+    text: "Низкий шёпот. Дыхание. Почти слова.",
+    choices: [{ label: "Назад к голосам", next: "arcade_voices" }],
   },
 
   arcade_lookaway: {
@@ -162,7 +220,7 @@ const SCENES = {
     type: "story",
     title: "ПОСЛАНИЕ",
     channel: "CH-01",
-    sound: "gabriel",
+    sound: "angel",
     character: "gabriel",
     unlock: ["gabriel", "alternate"],
     text:
@@ -411,7 +469,7 @@ const SCENES = {
     type: "story",
     title: "ДВЕРЬ ОТКРЫТА",
     channel: "CH-07",
-    sound: "door",
+    sound: "laugh",
     onEnter: "sting",
     unlock: ["alternate"],
     text:
@@ -437,7 +495,7 @@ const SCENES = {
     type: "story",
     title: "Я ХОЧУ ПРОСНУТЬСЯ",
     channel: "CH-07",
-    sound: "whisper",
+    sound: "cry",
     character: "mark",
     unlock: ["mark"],
     text:
@@ -582,6 +640,7 @@ const SCENES = {
     game: "static",
     title: "РАЦИЯ BYTHORNE",
     channel: "CH-09",
+    sound: "radio",
     text: "Помехи на частоте. Выцепите человеческие позывные. Не кликайте ловушки LOOK / OPEN / LOVE.",
     need: 3,
     lives: 2,
@@ -718,7 +777,7 @@ const SCENES = {
     type: "story",
     title: "НЕ ТОТ ГОЛОС",
     channel: "CH-09",
-    sound: "face",
+    sound: "speak",
     onEnter: "face",
     text:
       "Джона находит «Адама» слишком быстро.\nУлыбка уже готова. Глаза — нет.\n\nКрик в рацию обрывается помехами.\nАдам (настоящий) слышит это слишком поздно.",
@@ -731,7 +790,7 @@ const SCENES = {
     type: "story",
     title: "ОН В КАДРЕ",
     channel: "CH-09",
-    sound: "gabriel",
+    sound: "alternate",
     onEnter: "glitch",
     unlock: ["alternate", "gabriel"],
     text:
@@ -960,7 +1019,7 @@ const SCENES = {
       "Последняя партия карточек округа.\nОдна из них не должна пережить рассвет.",
     characterSeeds: ["gabriel", "alternate", "thatcher"],
     hard: true,
-    sound: "gabriel",
+    sound: "angel",
     nextCorrect: "ep3_collapse",
     nextWrong: "ep3_replaced",
   },
@@ -969,7 +1028,7 @@ const SCENES = {
     type: "story",
     title: "ОКРУГ МАНДЕЛА",
     channel: "CH-13",
-    sound: "choir",
+    sound: "presence",
     score: 1,
     text:
       "Вы верно изымаете аномалию из финального файла.\nЭто ничего не откатывает.\n\nШколы пусты. Частоты полиции шипят именами мёртвых.\nНа дорожных щитах — помехи вместо указателей.\n\nКаталог завершён не потому, что зло побеждено —\nа потому что почти некого каталогизировать.",

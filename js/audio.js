@@ -325,7 +325,7 @@ const ArchiveAudio = (() => {
   }
 
   function thinkOfSomeone() {
-    // Original eerie motif — not a rip of series audio
+    // Original eerie motif + wordless almost-plea
     if (!started || muted) return;
     const notes = [220, 247, 196, 165, 147];
     notes.forEach((freq, i) => {
@@ -342,11 +342,12 @@ const ArchiveAudio = (() => {
       o.start(t);
       o.stop(t + 0.75);
     });
-    setTimeout(() => whisper(1.8), 400);
+    setTimeout(() => murmur("whisper"), 300);
+    setTimeout(() => murmur("angel"), 1100);
   }
 
   function gabriel() {
-    // Deep distorted "false angel" presence
+    // Deep distorted "false angel" + wordless sermon texture
     if (!started || muted) return;
     const now = ctx.currentTime;
     const o = ctx.createOscillator();
@@ -372,6 +373,8 @@ const ArchiveAudio = (() => {
     o.stop(now + 2.5);
     o2.stop(now + 2.5);
     choirSwell(2.5);
+    setTimeout(() => murmur("angel"), 200);
+    setTimeout(() => murmur("alternate"), 1400);
   }
 
   function doorOpen() {
@@ -407,6 +410,218 @@ const ArchiveAudio = (() => {
     g.connect(master);
     src.start();
     src.stop(ctx.currentTime + 1.4);
+  }
+
+  /* ---- Wordless "speech" via vowel formants (no real words) ---- */
+  // Approximate vowel formants Hz: [F1, F2, F3]
+  const VOWELS = {
+    a: [800, 1200, 2600],
+    e: [500, 1800, 2500],
+    i: [300, 2200, 3000],
+    o: [500, 900, 2400],
+    u: [350, 700, 2200],
+    ae: [700, 1600, 2500],
+    uh: [600, 1000, 2400],
+  };
+
+  function formantBank(input, formants, q = 8) {
+    const out = ctx.createGain();
+    out.gain.value = 1;
+    formants.forEach((freq, i) => {
+      const bp = ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = freq;
+      bp.Q.value = q - i;
+      const g = ctx.createGain();
+      g.gain.value = i === 0 ? 1 : i === 1 ? 0.7 : 0.4;
+      input.connect(bp);
+      bp.connect(g);
+      g.connect(out);
+    });
+    return out;
+  }
+
+  function syllable(opts = {}) {
+    if (!started || muted) return 0;
+    const {
+      vowel = "a",
+      dur = 0.28,
+      pitch = 110,
+      whisper = false,
+      when = 0,
+      peak = 0.09,
+      glide = 0,
+    } = opts;
+    const t0 = ctx.currentTime + when;
+    const formants = VOWELS[vowel] || VOWELS.a;
+    const mix = ctx.createGain();
+    mix.gain.value = 0.0001;
+
+    let source;
+    if (whisper) {
+      source = ctx.createBufferSource();
+      source.buffer = createNoiseBuffer(Math.max(0.3, dur + 0.2));
+    } else {
+      source = ctx.createOscillator();
+      source.type = "sawtooth";
+      source.frequency.setValueAtTime(pitch, t0);
+      if (glide) source.frequency.linearRampToValueAtTime(pitch + glide, t0 + dur);
+    }
+
+    const bank = formantBank(source, formants, whisper ? 5 : 9);
+    const phone = ctx.createBiquadFilter();
+    phone.type = "bandpass";
+    phone.frequency.value = whisper ? 1600 : 1200;
+    phone.Q.value = 0.7;
+
+    bank.connect(phone);
+    phone.connect(mix);
+    mix.connect(master);
+
+    mix.gain.setValueAtTime(0.0001, t0);
+    mix.gain.exponentialRampToValueAtTime(peak, t0 + 0.04);
+    mix.gain.setValueAtTime(peak * 0.85, t0 + dur * 0.55);
+    mix.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+    source.start(t0);
+    source.stop(t0 + dur + 0.05);
+    return dur + 0.06;
+  }
+
+  /** Phrase of nonsense vowel-syllables — sounds like speech, no words */
+  function murmur(style = "human") {
+    if (!started || muted) return;
+    const patterns = {
+      human: [
+        { vowel: "e", pitch: 140, dur: 0.18 },
+        { vowel: "uh", pitch: 120, dur: 0.22 },
+        { vowel: "o", pitch: 130, dur: 0.2 },
+        { vowel: "a", pitch: 125, dur: 0.28, glide: -15 },
+      ],
+      alternate: [
+        { vowel: "i", pitch: 85, dur: 0.35, glide: 40 },
+        { vowel: "ae", pitch: 70, dur: 0.4, peak: 0.11 },
+        { vowel: "u", pitch: 95, dur: 0.25, glide: -30 },
+        { vowel: "a", pitch: 60, dur: 0.5, peak: 0.12 },
+      ],
+      angel: [
+        { vowel: "i", pitch: 220, dur: 0.4, peak: 0.07 },
+        { vowel: "e", pitch: 280, dur: 0.35, peak: 0.06 },
+        { vowel: "a", pitch: 200, dur: 0.55, glide: 60, peak: 0.08 },
+        { vowel: "u", pitch: 320, dur: 0.45, peak: 0.05 },
+      ],
+      phone: [
+        { vowel: "e", pitch: 160, dur: 0.16, peak: 0.07 },
+        { vowel: "a", pitch: 150, dur: 0.2, peak: 0.07 },
+        { vowel: "o", pitch: 145, dur: 0.18, peak: 0.07 },
+        { vowel: "uh", pitch: 155, dur: 0.3, peak: 0.08 },
+      ],
+      whisper: [
+        { vowel: "i", pitch: 180, dur: 0.22, whisper: true, peak: 0.08 },
+        { vowel: "e", pitch: 160, dur: 0.2, whisper: true, peak: 0.07 },
+        { vowel: "a", pitch: 140, dur: 0.35, whisper: true, peak: 0.09 },
+        { vowel: "u", pitch: 120, dur: 0.28, whisper: true, peak: 0.07 },
+      ],
+    };
+    const seq = patterns[style] || patterns.human;
+    let t = 0;
+    seq.forEach((s, i) => {
+      const gap = style === "alternate" ? 0.08 : 0.05;
+      syllable({ ...s, when: t });
+      t += (s.dur || 0.25) + gap + (i === 1 ? 0.12 : 0);
+    });
+    if (style === "alternate" || style === "angel") {
+      setTimeout(() => staticBurst(0.2, 0.05), 200);
+    }
+  }
+
+  function speak() {
+    // Random almost-sentence: human → glitch → alternate
+    if (!started || muted) return;
+    murmur("phone");
+    setTimeout(() => {
+      staticBurst(0.15, 0.08);
+      murmur("alternate");
+    }, 900);
+  }
+
+  function angel() {
+    if (!started || muted) return;
+    choirSwell(2.8);
+    murmur("angel");
+    setTimeout(() => murmur("whisper"), 1200);
+  }
+
+  function laugh() {
+    // Wordless broken chuckle via rapid syllables
+    if (!started || muted) return;
+    let t = 0;
+    for (let i = 0; i < 7; i++) {
+      syllable({
+        vowel: i % 2 ? "a" : "e",
+        pitch: 90 + i * 8,
+        dur: 0.09,
+        when: t,
+        peak: 0.07,
+        glide: 20,
+      });
+      t += 0.12;
+    }
+    setTimeout(() => breath(), 200);
+  }
+
+  function cry() {
+    if (!started || muted) return;
+    syllable({ vowel: "i", pitch: 240, dur: 0.7, when: 0, peak: 0.08, glide: -80 });
+    syllable({ vowel: "e", pitch: 180, dur: 0.9, when: 0.55, peak: 0.07, glide: -40 });
+    syllable({ vowel: "uh", pitch: 100, dur: 0.6, when: 1.3, peak: 0.06, whisper: true });
+  }
+
+  function radio() {
+    if (!started || muted) return;
+    staticBurst(0.3, 0.1);
+    murmur("phone");
+    setTimeout(() => {
+      staticBurst(0.5, 0.12);
+      murmur("whisper");
+    }, 700);
+  }
+
+  function vhs() {
+    if (!started || muted) return;
+    tapeRewind(0.5);
+    setTimeout(() => {
+      scratch(0.6);
+      murmur("angel");
+    }, 350);
+    setTimeout(() => staticBurst(0.4, 0.1), 900);
+  }
+
+  function presence() {
+    // Low room "someone is speaking in the walls"
+    if (!started || muted) return;
+    breath();
+    setTimeout(() => murmur("whisper"), 400);
+    setTimeout(() => syllable({ vowel: "o", pitch: 70, dur: 0.8, peak: 0.06, glide: 10 }), 1400);
+  }
+
+  function reverseGibber() {
+    // Fast backward-feeling nonsense (pitch ramp + syllables)
+    if (!started || muted) return;
+    let t = 0;
+    const vowels = ["i", "a", "u", "e", "o", "ae"];
+    for (let i = 0; i < 6; i++) {
+      syllable({
+        vowel: vowels[i],
+        pitch: 200 - i * 22,
+        dur: 0.14,
+        when: t,
+        peak: 0.075,
+        glide: -25,
+      });
+      t += 0.13;
+    }
+    staticBurst(0.35, 0.08);
   }
 
   function phoneRing(times = 3) {
@@ -470,22 +685,33 @@ const ArchiveAudio = (() => {
 
   function play(name) {
     const map = {
-      phone: () => phoneRing(2),
-      sting: () => sting(),
-      face: () => sting(),
-      glitch: () => { staticBurst(0.25, 0.1); blip(140, 0.2, 0.05); },
-      choir: () => choirSwell(2.4),
-      whisper: () => whisper(1.8),
-      knock: () => knock(3),
-      scratch: () => scratch(1.2),
-      tape: () => tapeRewind(1.1),
+      phone: () => { phoneRing(2); setTimeout(() => murmur("phone"), 600); },
+      sting: () => { sting(); setTimeout(() => laugh(), 200); },
+      face: () => { sting(); setTimeout(() => murmur("alternate"), 150); },
+      glitch: () => { staticBurst(0.25, 0.1); blip(140, 0.2, 0.05); reverseGibber(); },
+      choir: () => { choirSwell(2.4); setTimeout(() => murmur("angel"), 400); },
+      whisper: () => { whisper(1.2); murmur("whisper"); },
+      knock: () => { knock(3); setTimeout(() => murmur("whisper"), 900); },
+      scratch: () => { scratch(1.2); setTimeout(() => presence(), 300); },
+      tape: () => { tapeRewind(1.1); setTimeout(() => vhs(), 200); },
       heart: () => heartbeat(5),
-      emergency: () => emergencyTone(),
+      emergency: () => { emergencyTone(); setTimeout(() => murmur("phone"), 500); },
       think: () => thinkOfSomeone(),
       gabriel: () => gabriel(),
-      door: () => doorOpen(),
-      breath: () => breath(),
-      static: () => staticBurst(0.45, 0.14),
+      door: () => { doorOpen(); setTimeout(() => murmur("alternate"), 400); },
+      breath: () => { breath(); setTimeout(() => murmur("whisper"), 500); },
+      static: () => { staticBurst(0.45, 0.14); setTimeout(() => reverseGibber(), 100); },
+      // wordless voice bed
+      murmur: () => murmur("human"),
+      speak: () => speak(),
+      angel: () => angel(),
+      laugh: () => laugh(),
+      cry: () => cry(),
+      radio: () => radio(),
+      vhs: () => vhs(),
+      presence: () => presence(),
+      gibber: () => reverseGibber(),
+      alternate: () => murmur("alternate"),
     };
     (map[name] || (() => {}))();
   }
@@ -518,6 +744,15 @@ const ArchiveAudio = (() => {
     gabriel,
     doorOpen,
     breath,
+    murmur,
+    speak,
+    angel,
+    laugh,
+    cry,
+    radio,
+    vhs,
+    presence,
+    reverseGibber,
     phoneRing,
     stopPhone,
     beepFail,
