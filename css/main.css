@@ -435,6 +435,69 @@ button.danger {
   line-height: 1.5;
 }
 
+.disclaimer-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(2px);
+}
+
+.disclaimer-gate[hidden] {
+  display: none !important;
+}
+
+.disclaimer {
+  width: min(100%, 36rem);
+  border: 1px solid rgba(230, 179, 90, 0.55);
+  background: #07100a;
+  padding: 1.35rem 1.25rem 1.2rem;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.55);
+}
+
+.disclaimer h2 {
+  font-family: var(--font-display);
+  color: var(--phosphor-hot);
+  font-size: 1.45rem;
+  margin: 0.35rem 0 0.85rem;
+}
+
+.disclaimer__text {
+  color: var(--amber);
+  line-height: 1.55;
+  font-size: 0.92rem;
+  margin: 0 0 0.9rem;
+}
+
+.disclaimer__rules {
+  margin: 0 0 0.25rem;
+  padding-left: 1.1rem;
+  color: var(--phosphor-dim);
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.disclaimer__rules li + li {
+  margin-top: 0.35rem;
+}
+
+.disclaimer-banner {
+  border: 1px solid rgba(230, 179, 90, 0.4);
+  background: rgba(230, 179, 90, 0.08);
+  color: var(--amber);
+  padding: 0.7rem 0.85rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin-bottom: 0.85rem;
+}
+
+.disclaimer-banner strong {
+  letter-spacing: 0.12em;
+}
+
 .meter {
   display: flex;
   gap: 0.35rem;
