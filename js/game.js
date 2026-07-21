@@ -179,22 +179,76 @@
     );
   }
 
+  const DISCLAIMER_KEY = "mandela_fan_disclaimer_v1";
+  const DISCLAIMER_RU =
+    "Это некоммерческий фанатский проект. Все права на франшизу, персонажей и лор принадлежат Алексу Кистеру (Alex Kister). Проект не связан с официальными создателями.";
+
+  function disclaimerAccepted() {
+    try {
+      return localStorage.getItem(DISCLAIMER_KEY) === "1";
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function acceptDisclaimer() {
+    try {
+      localStorage.setItem(DISCLAIMER_KEY, "1");
+    } catch (_) {
+      /* ok */
+    }
+  }
+
+  function showDisclaimerGate() {
+    const host = document.getElementById("disclaimer-gate");
+    if (!host || disclaimerAccepted()) {
+      if (host) host.hidden = true;
+      return false;
+    }
+    host.hidden = false;
+    host.innerHTML = `
+      <div class="disclaimer" role="dialog" aria-modal="true" aria-labelledby="disclaimer-title">
+        <p class="kicker">FAN PROJECT // DISCLAIMER</p>
+        <h2 id="disclaimer-title">Некоммерческий фанатский проект</h2>
+        <p class="disclaimer__text">${DISCLAIMER_RU}</p>
+        <ul class="disclaimer__rules">
+          <li>Игра и сайт полностью <strong>бесплатны</strong> — без продажи, микротранзакций и коммерческой рекламы.</li>
+          <li>Донаты (если появятся) только добровольно, на покрытие хостинга.</li>
+          <li>Франшиза <strong>The Mandela Catalogue</strong> принадлежит <strong>Alex Kister</strong>.</li>
+        </ul>
+        <div class="actions">
+          <button class="primary" type="button" id="btn-accept-disclaimer">ПРИНИМАЮ / ВОЙТИ В АРХИВ</button>
+        </div>
+      </div>
+    `;
+    document.getElementById("btn-accept-disclaimer").onclick = () => {
+      acceptDisclaimer();
+      host.hidden = true;
+      ArchiveAudio.start().catch(() => {});
+    };
+    return true;
+  }
+
   function renderTitle() {
     updateHud("ВСТАВЬТЕ КАССЕТУ", "CH-00");
+    showDisclaimerGate();
     screen().innerHTML = `
       <section class="media-deck media-deck--title">
+        <aside class="disclaimer-banner" aria-label="Отказ от ответственности">
+          <strong>DISCLAIMER:</strong> ${DISCLAIMER_RU}
+        </aside>
         <div class="vhs vhs--hero" id="vhs-stage">
           <video class="vhs__video" id="vhs-video" muted loop playsinline></video>
           <div class="vhs__grain" aria-hidden="true"></div>
           <div class="vhs__hud">
             <span class="vhs__rec">● REC</span>
-            <span class="vhs__label">MEDIA GAME</span>
+            <span class="vhs__label">FAN MEDIA GAME</span>
             <span class="vhs__tc" id="vhs-tc">00:00:00</span>
           </div>
           <div class="vhs__titlecard">
-            <p class="kicker">по мотивам The Mandela Catalogue · Alex Kister</p>
+            <p class="kicker">фан-проект по The Mandela Catalogue · © Alex Kister</p>
             <h1 class="hero-brand"><span>MANDELA COUNTY</span>КАТАЛОГ<br/>МАНДЕЛЫ</h1>
-            <p class="lead">Медиа-игра: смотри кассету, проходи протоколы, не открывай дверь.</p>
+            <p class="lead">Бесплатная медиа-игра: кассета, протоколы, не открывай дверь.</p>
           </div>
         </div>
         <div class="actions">
@@ -202,18 +256,28 @@
           <button id="btn-episodes" type="button">ЭПИЗОДЫ</button>
           <button id="btn-catalog" type="button">КАТАЛОГ ЛИЦ</button>
           <button id="btn-mute" type="button">ЗВУК: ВКЛ</button>
+          <button id="btn-disclaimer" type="button">DISCLAIMER</button>
         </div>
         <div class="log">
-          Неофициальный бесплатный трибьют <strong>The Mandela Catalogue</strong> (Alex Kister).
-          Интерактивная адаптация на сток-медиа (Unsplash / Mixkit) — для добровольного просмотра.
+          Некоммерческий фанатский проект. Все права на франшизу — у Alex Kister.
+          Нет продажи, нет платного доступа, нет коммерческой рекламы.
         </div>
       </section>
     `;
     TapeMedia.mount(document.getElementById("vhs-video"), { video: "overcast", channel: "CH-01" });
     TapeMedia.bindTransport();
 
-    document.getElementById("btn-start").onclick = async () => {
+    const ensureOk = async () => {
+      if (!disclaimerAccepted()) {
+        showDisclaimerGate();
+        return false;
+      }
       await ArchiveAudio.start();
+      return true;
+    };
+
+    document.getElementById("btn-start").onclick = async () => {
+      if (!(await ensureOk())) return;
       if (typeof Portraits !== "undefined") Portraits.warmup();
       state.startedAt = Date.now();
       state.flags = { run: "full" };
@@ -223,17 +287,26 @@
     };
 
     document.getElementById("btn-episodes").onclick = async () => {
-      await ArchiveAudio.start();
+      if (!(await ensureOk())) return;
       state.startedAt = Date.now();
       ArchiveAudio.play("tape");
       go("episode_select");
     };
 
     document.getElementById("btn-catalog").onclick = async () => {
-      await ArchiveAudio.start();
+      if (!(await ensureOk())) return;
       unlockChars(CHARACTER_ORDER);
       ArchiveAudio.play("tape");
       go("catalog_full");
+    };
+
+    document.getElementById("btn-disclaimer").onclick = () => {
+      try {
+        localStorage.removeItem(DISCLAIMER_KEY);
+      } catch (_) {
+        /* ok */
+      }
+      showDisclaimerGate();
     };
 
     const muteBtn = document.getElementById("btn-mute");
@@ -575,7 +648,7 @@
           <button id="btn-mute-end" type="button">${ArchiveAudio.muted ? "ЗВУК: ВЫКЛ" : "ЗВУК: ВКЛ"}</button>
         </div>
         <div class="log">
-          Полный сюжетный трибьют Mandela Catalogue. Звуки — Web Audio.
+          ${DISCLAIMER_RU}
         </div>
       </section>
     `;
