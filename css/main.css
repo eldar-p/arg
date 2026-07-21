@@ -498,6 +498,88 @@ button.danger {
   letter-spacing: 0.12em;
 }
 
+.disclaimer-banner a,
+.official-meta a,
+.button-link {
+  color: var(--amber);
+}
+
+.official-player {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: min(56vh, 480px);
+  background: #000;
+  border: 1px solid rgba(125, 255, 154, 0.28);
+  overflow: hidden;
+  margin: 0.75rem 0 0.5rem;
+}
+
+.official-player__frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.official-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.55rem;
+  margin: 1rem 0;
+}
+
+.official-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  text-align: left;
+  padding: 0.7rem 0.75rem;
+  width: 100%;
+}
+
+.official-card.is-on {
+  border-color: var(--amber);
+  background: rgba(230, 179, 90, 0.1);
+}
+
+.official-card__ep {
+  color: var(--amber);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+}
+
+.official-card small {
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--phosphor-dim);
+  padding: 0.85rem 1.1rem;
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  color: var(--phosphor);
+}
+
+.button-link:hover {
+  border-color: var(--phosphor);
+  color: var(--phosphor-hot);
+  background: rgba(125, 255, 154, 0.1);
+}
+
+.official-meta {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+}
+
 .meter {
   display: flex;
   gap: 0.35rem;

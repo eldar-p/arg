@@ -14,10 +14,16 @@ const SCENES = {
     channel: "CH-00",
     sound: "tape",
     text:
-      "Сюжет округа Мандела.\nЧтобы перемотать кассету дальше, архив требует протоколы — мини-игры в теме Альтернатов.\nБез протокола следующая сцена не откроется.",
+      "Две полки:\n1) Фан-адаптация с протоколами.\n2) Официальные кассеты Alex Kister — через YouTube.",
     choices: [
       {
-        label: "▶ С НАЧАЛА (полный сюжет)",
+        label: "▶ ОФИЦИАЛЬНЫЕ КАССЕТЫ (Alex Kister / YouTube)",
+        hint: "overthrone, Vol.1–5 и др. — без перезаливки файлов",
+        next: "official_tapes",
+        flags: { officialTape: "overthrone" },
+      },
+      {
+        label: "▶ С НАЧАЛА (фан-сюжет)",
         hint: "Каждый акт = сюжет → обязательная мини-игра → дальше",
         next: "ep0_overcast",
         flags: { run: "full" },
@@ -47,6 +53,15 @@ const SCENES = {
         next: "catalog_full",
       },
     ],
+  },
+
+  official_tapes: {
+    type: "official",
+    title: "ОФИЦИАЛЬНЫЕ КАССЕТЫ",
+    channel: "CH-00",
+    tape: "overthrone",
+    sound: "tape",
+    next: "boot",
   },
 
   catalog_full: {
