@@ -38,22 +38,30 @@ const TapeMedia = (() => {
   }
 
   function mount(videoEl, scene, { still = null } = {}) {
-    if (!videoEl) return;
+    if (!videoEl) return null;
     const name = clipFor(scene);
-    videoEl.src = srcFor(name);
-    videoEl.muted = true;
-    videoEl.loop = true;
-    videoEl.playsInline = true;
-    videoEl.setAttribute("playsinline", "");
-    videoEl.autoplay = true;
-    const play = () => videoEl.play().catch(() => {});
-    videoEl.onloadeddata = play;
-    play();
-
-    if (still) {
-      // optional still portrait overlay target
-      still.dataset.clip = name;
+    try {
+      videoEl.muted = true;
+      videoEl.defaultMuted = true;
+      videoEl.loop = true;
+      videoEl.playsInline = true;
+      videoEl.setAttribute("playsinline", "");
+      videoEl.setAttribute("muted", "");
+      videoEl.autoplay = true;
+      videoEl.preload = "auto";
+      videoEl.src = srcFor(name);
+      const play = () => videoEl.play().catch(() => {});
+      videoEl.onloadeddata = play;
+      videoEl.onerror = () => {
+        videoEl.removeAttribute("src");
+        videoEl.load();
+      };
+      play();
+    } catch (_) {
+      /* keep UI usable without video */
     }
+
+    if (still) still.dataset.clip = name;
     return name;
   }
 
