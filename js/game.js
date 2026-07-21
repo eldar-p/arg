@@ -182,24 +182,35 @@
   function renderTitle() {
     updateHud("ВСТАВЬТЕ КАССЕТУ", "CH-00");
     screen().innerHTML = `
-      <section class="panel">
-        <p class="kicker">Tribute archive // not official media</p>
-        <h1 class="hero-brand"><span>MANDELA COUNTY</span>КАТАЛОГ<br/>МАНДЕЛЫ</h1>
-        <p class="lead">
-          Сюжет идёт через обязательные протоколы: взгляд, голос, дверь, рация, каталог.
-        </p>
+      <section class="media-deck media-deck--title">
+        <div class="vhs vhs--hero" id="vhs-stage">
+          <video class="vhs__video" id="vhs-video" muted loop playsinline></video>
+          <div class="vhs__grain" aria-hidden="true"></div>
+          <div class="vhs__hud">
+            <span class="vhs__rec">● REC</span>
+            <span class="vhs__label">MEDIA GAME</span>
+            <span class="vhs__tc" id="vhs-tc">00:00:00</span>
+          </div>
+          <div class="vhs__titlecard">
+            <p class="kicker">по мотивам The Mandela Catalogue · Alex Kister</p>
+            <h1 class="hero-brand"><span>MANDELA COUNTY</span>КАТАЛОГ<br/>МАНДЕЛЫ</h1>
+            <p class="lead">Медиа-игра: смотри кассету, проходи протоколы, не открывай дверь.</p>
+          </div>
+        </div>
         <div class="actions">
-          <button class="primary" id="btn-start" type="button">▶ ПОЛНЫЙ СЮЖЕТ</button>
+          <button class="primary" id="btn-start" type="button">▶ PLAY FULL TAPE</button>
           <button id="btn-episodes" type="button">ЭПИЗОДЫ</button>
           <button id="btn-catalog" type="button">КАТАЛОГ ЛИЦ</button>
           <button id="btn-mute" type="button">ЗВУК: ВКЛ</button>
         </div>
         <div class="log">
-          Честно: это не кадры и не OST сериала (авторские права). Фото — реальные снимки Unsplash;
-          музыкальные дорожки и эффекты — Mixkit. Трибьют по мотивам The Mandela Catalogue.
+          Неофициальный бесплатный трибьют <strong>The Mandela Catalogue</strong> (Alex Kister).
+          Интерактивная адаптация на сток-медиа (Unsplash / Mixkit) — для добровольного просмотра.
         </div>
       </section>
     `;
+    TapeMedia.mount(document.getElementById("vhs-video"), { video: "overcast", channel: "CH-01" });
+    TapeMedia.bindTransport();
 
     document.getElementById("btn-start").onclick = async () => {
       await ArchiveAudio.start();
@@ -207,6 +218,7 @@
       state.startedAt = Date.now();
       state.flags = { run: "full" };
       Effects.glitchBurst(400);
+      ArchiveAudio.play("tape");
       go("ep0_overcast");
     };
 
@@ -234,22 +246,16 @@
 
   function renderBroadcast(scene) {
     const ep = episodeLabel(scene.channel || "CH-00");
-    screen().innerHTML = `
-      <section class="panel">
-        <p class="kicker">${ep} // Трансляция</p>
-        <h2 class="scene-title">${escapeHtml(scene.title)}</h2>
-        <div class="tape-frame">
-          <div class="tape-frame__label">${escapeHtml(scene.label || "APS")}</div>
-          <div class="broadcast">
-            <h3>${escapeHtml(scene.title)}</h3>
-            <p id="broadcast-body"></p>
-          </div>
-        </div>
-        <div class="actions">
-          <button class="primary" id="btn-next" type="button">ПРОДОЛЖИТЬ ▶</button>
-        </div>
-      </section>
-    `;
+    screen().innerHTML =
+      TapeMedia.deckHtml({
+        title: escapeHtml(scene.title),
+        kicker: `${ep} // ТРАНСЛЯЦИЯ`,
+        label: escapeHtml(scene.label || "APS"),
+        bodyId: "broadcast-body",
+        extra: `<div class="actions"><button class="primary" id="btn-next" type="button">▶ NEXT TRACK</button></div>`,
+      });
+    TapeMedia.mount(document.getElementById("vhs-video"), scene);
+    TapeMedia.bindTransport();
     Effects.typeText(document.getElementById("broadcast-body"), scene.body, 55);
     document.getElementById("btn-next").onclick = () => go(scene.next);
   }
@@ -269,18 +275,28 @@
   function renderStory(scene) {
     const char = scene.character ? CHARACTERS[scene.character] : null;
     const ep = episodeLabel(scene.channel || "CH-00");
-    screen().innerHTML = `
-      <section class="panel">
-        <p class="kicker">${ep}${state.role ? ` // ${roleLabel(state.role)}` : ""}${
-          char ? ` // ${escapeHtml(char.nameRu)}` : ""
-        }</p>
-        <h2 class="scene-title">${escapeHtml(scene.title)}</h2>
-        <div class="meter" aria-hidden="true">${meterHtml()}</div>
-        ${char ? characterChip(char) : ""}
-        <p class="prose" id="story-text"></p>
-        <div class="choices" id="choices"></div>
-      </section>
-    `;
+    const kicker = `${ep}${state.role ? ` // ${roleLabel(state.role)}` : ""}${
+      char ? ` // ${escapeHtml(char.nameRu)}` : ""
+    }`;
+    const still = char
+      ? `<div class="vhs__still"><img class="portrait-photo" id="tape-still" alt="" /></div>`
+      : "";
+    screen().innerHTML =
+      TapeMedia.deckHtml({
+        title: escapeHtml(scene.title),
+        kicker,
+        label: "TAPE",
+        bodyId: "story-text",
+        extra: `
+          <div class="meter" aria-hidden="true">${meterHtml()}</div>
+          ${char ? characterChip(char) : ""}
+          ${still}
+          <div class="choices" id="choices"></div>
+        `,
+      });
+    TapeMedia.mount(document.getElementById("vhs-video"), scene);
+    TapeMedia.bindTransport();
+    if (char) setPhotoEl(document.getElementById("tape-still"), char, !!char.alternate);
     Effects.typeText(document.getElementById("story-text"), scene.text, 64);
     mountChoices(scene.choices || []);
     paintChips();
@@ -289,19 +305,23 @@
   function renderPhone(scene) {
     const char = scene.character ? CHARACTERS[scene.character] : null;
     const ep = episodeLabel(scene.channel || "CH-07");
-    screen().innerHTML = `
-      <section class="panel">
-        <p class="kicker">${ep} // Входящий сигнал${char ? ` // ${escapeHtml(char.name)}` : ""}</p>
-        <h2 class="scene-title">${escapeHtml(scene.title || "ЗВОНОК")}</h2>
-        ${char ? characterChip(char) : ""}
-        <div class="phone">
-          <div class="phone__from">${escapeHtml(scene.from)}</div>
-          <div class="phone__line">«${escapeHtml(scene.line)}»</div>
-        </div>
-        <p class="prose" id="story-text"></p>
-        <div class="choices" id="choices"></div>
-      </section>
-    `;
+    screen().innerHTML =
+      TapeMedia.deckHtml({
+        title: escapeHtml(scene.title || "ЗВОНОК"),
+        kicker: `${ep} // ВХОДЯЩИЙ${char ? ` // ${escapeHtml(char.name)}` : ""}`,
+        label: "PHONE",
+        bodyId: "story-text",
+        extra: `
+          ${char ? characterChip(char) : ""}
+          <div class="phone">
+            <div class="phone__from">${escapeHtml(scene.from)}</div>
+            <div class="phone__line">«${escapeHtml(scene.line)}»</div>
+          </div>
+          <div class="choices" id="choices"></div>
+        `,
+      });
+    TapeMedia.mount(document.getElementById("vhs-video"), { ...scene, video: scene.video || "static_night" });
+    TapeMedia.bindTransport();
     Effects.typeText(document.getElementById("story-text"), scene.text, 64);
     mountChoices(scene.choices || []);
     paintChips();

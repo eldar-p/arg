@@ -1,0 +1,14 @@
+Stock video from Mixkit (https://mixkit.co/license/#videoFree).
+Free under Mixkit License. NOT footage from The Mandela Catalogue series.
+Tribute media game inspired by The Mandela Catalogue (Alex Kister).
+
+overcast.mp4 <= id 33872
+house.mp4 <= id 44314
+static_night.mp4 <= id 4080
+terror.mp4 <= id 46741
+fog.mp4 <= id 1991
+corridor.mp4 <= id 25580
+watcher.mp4 <= id 2001
+collapse.mp4 <= id 30605
+radio_room.mp4 <= id 32953
+end.mp4 <= id 41759
