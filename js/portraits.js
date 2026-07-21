@@ -6,7 +6,7 @@ const Portraits = (() => {
 
   function pathFor(id, alternate = false) {
     const key = POOL.includes(id) ? id : POOL[Math.abs(hash(id)) % POOL.length];
-    return `${BASE}${key}${alternate ? "_alt" : "_crt"}.jpg`;
+    return `${BASE}${key}${alternate ? "_alt" : "_photo"}.jpg`;
   }
 
   function pathForSeed(seed, alternate = false) {

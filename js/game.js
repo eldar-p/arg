@@ -183,11 +183,10 @@
     updateHud("ВСТАВЬТЕ КАССЕТУ", "CH-00");
     screen().innerHTML = `
       <section class="panel">
-        <p class="kicker">Full Plot Adaptation // Tribute</p>
+        <p class="kicker">Tribute archive // not official media</p>
         <h1 class="hero-brand"><span>MANDELA COUNTY</span>КАТАЛОГ<br/>МАНДЕЛЫ</h1>
         <p class="lead">
-          Сюжет идёт через обязательные протоколы: чтобы открыть следующую кассету,
-          нужно пройти мини-игру (взгляд, голос, дверь, рация, каталог…).
+          Сюжет идёт через обязательные протоколы: взгляд, голос, дверь, рация, каталог.
         </p>
         <div class="actions">
           <button class="primary" id="btn-start" type="button">▶ ПОЛНЫЙ СЮЖЕТ</button>
@@ -196,8 +195,8 @@
           <button id="btn-mute" type="button">ЗВУК: ВКЛ</button>
         </div>
         <div class="log">
-          Мини-игры — не отдельный режим, а ворота сюжета. Провал меняет исход; часть протоколов нельзя пропустить.
-          Трибьют The Mandela Catalogue.
+          Честно: это не кадры и не OST сериала (авторские права). Фото — реальные снимки Unsplash;
+          музыкальные дорожки и эффекты — Mixkit. Трибьют по мотивам The Mandela Catalogue.
         </div>
       </section>
     `;

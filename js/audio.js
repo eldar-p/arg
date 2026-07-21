@@ -1,27 +1,36 @@
-/* Archive audio: Mixkit royalty-free samples + light Web Audio fallback.
-   Does NOT include copyrighted audio from The Mandela Catalogue. */
+/* Archive audio: Mixkit music beds + SFX. NOT Mandela Catalogue OST. */
 const ArchiveAudio = (() => {
-  const BASE = "assets/sfx/";
+  const SFX = "assets/sfx/";
+  const MUSIC = "assets/music/";
   let ctx = null;
   let master = null;
   let busFx = null;
   let busBed = null;
+  let busMusic = null;
   let started = false;
   let muted = false;
   let buffers = new Map();
   let loading = null;
-  let bedNodes = []; // looping ambience sources
+  let bedNodes = [];
+  let musicNodes = [];
   let bedGain = null;
   let droneGain = null;
+  let musicGain = null;
+  let musicHotGain = null;
   let heartTimer = null;
   let activeOnes = new Set();
 
-  const FILES = [
+  const SFX_FILES = [
     "ambience", "drone", "room", "knock", "door", "phone", "heart",
     "static", "static_short", "radio", "radio_creepy", "glitch", "sting",
     "impact", "choir", "choir_dark", "angel", "whisper", "breath", "presence",
     "scratch", "tape", "vhs", "emergency", "laugh", "cry", "voices", "gibber",
     "wind", "swell", "riser", "creak", "alarm",
+  ];
+
+  // Full royalty-free soundtrack beds (Mixkit music)
+  const MUSIC_FILES = [
+    "bed_dark", "bed_piano", "bed_echoes", "bed_delirium", "bed_dreams",
   ];
 
   function ensure() {
@@ -30,15 +39,30 @@ const ArchiveAudio = (() => {
     if (!AC) return null;
     ctx = new AC();
     master = ctx.createGain();
-    master.gain.value = 0.85;
+    master.gain.value = 0.9;
     busFx = ctx.createGain();
     busFx.gain.value = 0.95;
     busBed = ctx.createGain();
-    busBed.gain.value = 0.55;
+    busBed.gain.value = 0.35;
+    busMusic = ctx.createGain();
+    busMusic.gain.value = 0.72;
     busFx.connect(master);
     busBed.connect(master);
+    busMusic.connect(master);
     master.connect(ctx.destination);
     return ctx;
+  }
+
+  async function decodeFile(path, name) {
+    try {
+      const res = await fetch(path);
+      if (!res.ok) throw new Error(res.statusText);
+      const arr = await res.arrayBuffer();
+      const buf = await ctx.decodeAudioData(arr.slice(0));
+      buffers.set(name, buf);
+    } catch (_) {
+      /* optional asset */
+    }
   }
 
   async function loadAll() {
@@ -46,19 +70,10 @@ const ArchiveAudio = (() => {
     if (!ctx) return;
     if (buffers.size) return;
     if (loading) return loading;
-    loading = Promise.all(
-      FILES.map(async (name) => {
-        try {
-          const res = await fetch(`${BASE}${name}.mp3`);
-          if (!res.ok) throw new Error(res.statusText);
-          const arr = await res.arrayBuffer();
-          const buf = await ctx.decodeAudioData(arr.slice(0));
-          buffers.set(name, buf);
-        } catch (_) {
-          /* synth fallback remains */
-        }
-      })
-    );
+    loading = Promise.all([
+      ...SFX_FILES.map((name) => decodeFile(`${SFX}${name}.mp3`, name)),
+      ...MUSIC_FILES.map((name) => decodeFile(`${MUSIC}${name}.mp3`, name)),
+    ]);
     await loading;
     loading = null;
   }
@@ -182,28 +197,48 @@ const ArchiveAudio = (() => {
   function startBeds() {
     stopBeds();
     if (!ctx) return;
+
+    // Main soundtrack beds (real music tracks)
+    musicGain = ctx.createGain();
+    musicGain.gain.value = 0.55;
+    musicGain.connect(busMusic);
+    musicHotGain = ctx.createGain();
+    musicHotGain.gain.value = 0.0;
+    musicHotGain.connect(busMusic);
+
+    const m1 = has("bed_dark")
+      ? playBuf("bed_dark", { gain: 1, loop: true, dest: musicGain, fadeIn: 2.2 })
+      : null;
+    const m2 = has("bed_piano")
+      ? playBuf("bed_piano", { gain: 0.85, loop: true, dest: musicHotGain, fadeIn: 3.0 })
+      : null;
+    const m3 = has("bed_echoes")
+      ? playBuf("bed_echoes", { gain: 0.45, loop: true, dest: musicGain, fadeIn: 4.0, rate: 0.98 })
+      : null;
+    musicNodes = [m1, m2, m3].filter(Boolean);
+
+    // Quiet atmospheric bed under the score
     bedGain = ctx.createGain();
-    bedGain.gain.value = 0.22;
+    bedGain.gain.value = 0.12;
     bedGain.connect(busBed);
     droneGain = ctx.createGain();
     droneGain.gain.value = 0.0;
     droneGain.connect(busBed);
 
     const amb = has("ambience")
-      ? playBuf("ambience", { gain: 1, loop: true, dest: bedGain, fadeIn: 1.2 })
+      ? playBuf("ambience", { gain: 0.7, loop: true, dest: bedGain, fadeIn: 1.2 })
       : null;
     const drone = has("drone")
       ? playBuf("drone", { gain: 1, loop: true, dest: droneGain, fadeIn: 2.0 })
       : null;
-    const room = has("room")
-      ? playBuf("room", { gain: 0.55, loop: true, dest: bedGain, fadeIn: 1.8, rate: 0.95 })
-      : null;
-    bedNodes = [amb, drone, room].filter(Boolean);
+    bedNodes = [amb, drone].filter(Boolean);
   }
 
   function stopBeds() {
     bedNodes.forEach((h) => h && h.stop(0.4));
+    musicNodes.forEach((h) => h && h.stop(0.5));
     bedNodes = [];
+    musicNodes = [];
   }
 
   async function start() {
@@ -222,8 +257,17 @@ const ArchiveAudio = (() => {
   function setIntensity(level = 0) {
     if (!started || muted || !ctx) return;
     const n = Math.max(0, Math.min(1, level));
-    if (bedGain) bedGain.gain.setTargetAtTime(0.18 + n * 0.2, ctx.currentTime, 0.35);
-    if (droneGain) droneGain.gain.setTargetAtTime(n * 0.45, ctx.currentTime, 0.45);
+    if (musicGain) musicGain.gain.setTargetAtTime(0.45 + n * 0.15, ctx.currentTime, 0.5);
+    if (musicHotGain) musicHotGain.gain.setTargetAtTime(n * 0.7, ctx.currentTime, 0.6);
+    if (bedGain) bedGain.gain.setTargetAtTime(0.1 + n * 0.12, ctx.currentTime, 0.35);
+    if (droneGain) droneGain.gain.setTargetAtTime(n * 0.35, ctx.currentTime, 0.45);
+  }
+
+  /** Swap / layer a named music bed cue over the score */
+  function playScore(name) {
+    if (!started || muted) return;
+    if (has(name)) playBuf(name, { gain: 0.7, loop: false, dest: busMusic, fadeIn: 0.4 });
+    else if (has("bed_delirium")) playBuf("bed_delirium", { gain: 0.65, loop: false, dest: busMusic, fadeIn: 0.3 });
   }
 
   function staticBurst(dur = 0.35, gain = 0.7) {
@@ -443,37 +487,63 @@ const ArchiveAudio = (() => {
         staticBurst(0.25, 0.55);
         reverseGibber();
       },
-      choir: () => { choirSwell(); setTimeout(() => murmur("angel"), 350); },
+      choir: () => {
+        playScore("bed_dreams");
+        choirSwell();
+        setTimeout(() => murmur("angel"), 350);
+      },
       whisper: () => { whisper(); if (has("wind")) playOne("wind", 0.25); },
       knock: () => { knock(); setTimeout(() => presence(), 700); },
       scratch: () => { scratch(); setTimeout(() => presence(), 250); },
       tape: () => { tapeRewind(); setTimeout(() => vhs(), 180); },
-      heart: () => heartbeat(5),
+      heart: () => {
+        playScore("bed_piano");
+        heartbeat(5);
+      },
       emergency: () => { emergencyTone(); setTimeout(() => murmur("phone"), 400); },
-      think: () => thinkOfSomeone(),
-      gabriel: () => gabriel(),
+      think: () => {
+        playScore("bed_dreams");
+        thinkOfSomeone();
+      },
+      gabriel: () => {
+        playScore("bed_delirium");
+        gabriel();
+      },
       door: () => { doorOpen(); setTimeout(() => murmur("alternate"), 450); },
       breath: () => { breath(); setTimeout(() => whisper(), 400); },
       static: () => { staticBurst(0.5, 0.7); setTimeout(() => reverseGibber(), 80); },
       murmur: () => murmur("human"),
       speak: () => speak(),
-      angel: () => angel(),
+      angel: () => {
+        playScore("bed_dreams");
+        angel();
+      },
       laugh: () => laugh(),
-      cry: () => cry(),
+      cry: () => {
+        playScore("bed_piano");
+        cry();
+      },
       radio: () => radio(),
       vhs: () => vhs(),
       presence: () => presence(),
       gibber: () => reverseGibber(),
-      alternate: () => murmur("alternate"),
+      alternate: () => {
+        playScore("bed_delirium");
+        murmur("alternate");
+      },
       beepOk: () => beepOk(),
-      riser: () => { if (has("riser")) playOne("riser", 0.7); else if (has("swell")) playOne("swell", 0.7); },
+      riser: () => {
+        playScore("bed_echoes");
+        if (has("riser")) playOne("riser", 0.7);
+        else if (has("swell")) playOne("swell", 0.7);
+      },
     };
     (map[name] || (() => {}))();
   }
 
   function toggleMute() {
     muted = !muted;
-    if (master) master.gain.value = muted ? 0 : 0.85;
+    if (master) master.gain.value = muted ? 0 : 0.9;
     if (muted) {
       stopPhone();
       stopHeartbeat();
@@ -487,6 +557,7 @@ const ArchiveAudio = (() => {
   return {
     start,
     setIntensity,
+    playScore,
     blip,
     sting,
     staticBurst,
