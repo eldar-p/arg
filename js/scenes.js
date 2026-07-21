@@ -50,7 +50,87 @@ const SCENES = {
         label: "Каталог лиц",
         next: "catalog_full",
       },
+      {
+        label: "Arcade — мини-игры",
+        hint: "Тренировка протоколов APS",
+        next: "arcade",
+      },
     ],
+  },
+
+  arcade: {
+    type: "story",
+    title: "ARCADE // ПРОТОКОЛЫ",
+    channel: "CH-00",
+    sound: "tape",
+    text:
+      "Тренировочные модули архива.\nПоражение повышает паранойю. Победа — очки выживания.\nВыберите протокол.",
+    choices: [
+      { label: "Не смотри в глаза", next: "arcade_lookaway" },
+      { label: "Чей голос — подмена?", next: "arcade_voice" },
+      { label: "Дверь: стук / протокол", next: "arcade_knock" },
+      { label: "Память каталога", next: "arcade_memory" },
+      { label: "Рация / статика", next: "arcade_static" },
+      { label: "Тест APS", next: "arcade_quiz" },
+      { label: "Назад к эпизодам", next: "episode_select" },
+    ],
+  },
+
+  arcade_lookaway: {
+    type: "minigame",
+    game: "lookaway",
+    title: "ТРЕНАЖЁР ВЗГЛЯДА",
+    channel: "CH-00",
+    text: "Лицо появится. Не смотрите. Отведите взгляд, пока шкала не заполнилась.",
+    hint: "Курсор на лице = вы смотрите.",
+    nextCorrect: "arcade",
+    nextWrong: "arcade",
+    seed: 9999,
+  },
+  arcade_voice: {
+    type: "minigame",
+    game: "voice",
+    title: "ТРЕНАЖЁР ЛИНИИ",
+    channel: "CH-00",
+    text: "Отметьте реплику Альтерната.",
+    nextCorrect: "arcade",
+    nextWrong: "arcade",
+  },
+  arcade_knock: {
+    type: "minigame",
+    game: "knock",
+    title: "ТРЕНАЖЁР ДВЕРИ",
+    channel: "CH-00",
+    text: "Три стука. Выберите действие по протоколу APS.",
+    nextCorrect: "arcade",
+    nextWrong: "arcade",
+  },
+  arcade_memory: {
+    type: "minigame",
+    game: "memory",
+    title: "ТРЕНАЖЁР ПАМЯТИ",
+    channel: "CH-00",
+    text: "Запомните подмену среди вспышки карточек.",
+    nextCorrect: "arcade",
+    nextWrong: "arcade",
+  },
+  arcade_static: {
+    type: "minigame",
+    game: "static",
+    title: "ТРЕНАЖЁР РАЦИИ",
+    channel: "CH-00",
+    text: "Выцепите человеческие метки из статики.",
+    nextCorrect: "arcade",
+    nextWrong: "arcade",
+  },
+  arcade_quiz: {
+    type: "minigame",
+    game: "quiz",
+    title: "ТРЕНАЖЁР APS",
+    channel: "CH-00",
+    text: "Три вопроса. Две ошибки — провал.",
+    nextCorrect: "arcade",
+    nextWrong: "arcade",
   },
 
   catalog_full: {
@@ -126,7 +206,7 @@ const SCENES = {
       "Экран просит образ. Имя. Лицо.\nЧем яснее вы вспоминаете — тем точнее копия.\n\nВ статической сетке на секунду появляется улыбка:\nслишком широкая, глаза — пустые.\n\nТак начинается Каталог: не с монстра за дверью, а с мысли, которую вам разрешили подумать.",
     paranoia: 1,
     choices: [
-      { label: "Перейти к Vol.1 — округ Мандела", next: "ep0_to_vol1" },
+      { label: "Протокол: не смотреть в глаза", next: "mg_lookaway_ep0" },
     ],
   },
 
@@ -138,8 +218,24 @@ const SCENES = {
     text:
       "Вы выключаете плёнку на полуслове.\nВ тишине всё равно слышен низкий хор — будто сигнал уже в комнате.\n\nНа этикетке кассеты чужой рукой:\n«ПОЗДНО. ОНИ УЖЕ ЗНАЮТ ИМЕНА.»",
     choices: [
-      { label: "Перейти к Vol.1 — округ Мандела", next: "ep0_to_vol1" },
+      { label: "Протокол: не смотреть в глаза", next: "mg_lookaway_ep0" },
     ],
+  },
+
+  mg_lookaway_ep0: {
+    type: "minigame",
+    game: "lookaway",
+    title: "НЕ СМОТРИТЕ",
+    channel: "CH-01",
+    text: "«Гавриил» заползает в кадр. Отведите взгляд, пока шкала взгляда не достигнет 100%.",
+    hint: "Наведите курсор на лицо = вы смотрите. Кнопка «Отвести взгляд».",
+    winText: "ВЗГЛЯД РАЗОРВАН. СИГНАЛ ОСЛАБ.",
+    loseText: "ВЫ СМОТРЕЛИ СЛИШКОМ ДОЛГО.",
+    nextCorrect: "ep0_to_vol1",
+    nextWrong: "ep0_to_vol1",
+    seed: 9999,
+    stingOnFail: true,
+    paranoiaLose: 1,
   },
 
   ep0_to_vol1: {
@@ -187,13 +283,13 @@ const SCENES = {
     choices: [
       {
         label: "Как Марк: не открывать, выяснить детали",
-        next: "ep1_question",
+        next: "mg_voice_ep1",
         score: 1,
         flags: { mark_cautious: true },
       },
       {
         label: "Как Марк: поверить другу и подойти к двери",
-        next: "ep1_door",
+        next: "mg_voice_ep1b",
         paranoia: 1,
         flags: { mark_trust: true },
       },
@@ -202,6 +298,31 @@ const SCENES = {
         next: "dossier_mark_ep1",
       },
     ],
+  },
+
+  mg_voice_ep1: {
+    type: "minigame",
+    game: "voice",
+    title: "РАСПОЗНАВАНИЕ ЛИНИИ",
+    channel: "CH-07",
+    text: "На записи несколько реплик. Отметьте ту, что принадлежит Альтернату.",
+    round: 0,
+    nextCorrect: "ep1_question",
+    nextWrong: "ep1_question",
+    scoreWin: 1,
+    paranoiaLose: 1,
+  },
+
+  mg_voice_ep1b: {
+    type: "minigame",
+    game: "voice",
+    title: "РАСПОЗНАВАНИЕ ЛИНИИ",
+    channel: "CH-07",
+    text: "Даже если вы уже у двери — услышьте подмену.",
+    round: 0,
+    nextCorrect: "ep1_door",
+    nextWrong: "ep1_door",
+    paranoiaLose: 1,
   },
 
   dossier_mark_ep1: {
@@ -222,16 +343,16 @@ const SCENES = {
     unlock: ["alternate"],
     choices: [
       {
+        label: "Протокол двери (мини-игра)",
+        next: "mg_knock_ep1",
+        score: 1,
+        flags: { recorded: true },
+      },
+      {
         label: "Смотреть в глазок",
         next: "ep1_peephole",
         paranoia: 2,
         flags: { looked_peephole: true },
-      },
-      {
-        label: "Не смотреть. Отойти. Записывать.",
-        next: "ep1_record",
-        score: 1,
-        flags: { recorded: true },
       },
       {
         label: "Открыть дверь",
@@ -243,6 +364,19 @@ const SCENES = {
     ],
   },
 
+  mg_knock_ep1: {
+    type: "minigame",
+    game: "knock",
+    title: "ТРИ СТУКА",
+    channel: "CH-07",
+    text: "Дверь. Протокол APS. Ошибиться = впустить ночь.",
+    nextCorrect: "ep1_record",
+    nextWrong: "ep1_terror",
+    scoreWin: 1,
+    paranoiaLose: 2,
+    stingOnFail: true,
+  },
+
   ep1_door: {
     type: "story",
     title: "У ДВЕРИ",
@@ -251,7 +385,7 @@ const SCENES = {
     text:
       "Марк подходит ближе.\nСквозь дерево — дыхание.\n\n«Пожалуйста.»\nГолос Сезара срывается в чужой регистр и возвращается обратно — как плохо настроенный приёмник.\n\nВ этот момент Марк ещё может отступить.",
     choices: [
-      { label: "Отступить и не смотреть", next: "ep1_record", score: 1 },
+      { label: "Протокол двери (мини-игра)", next: "mg_knock_ep1", score: 1 },
       { label: "Взглянуть в глазок", next: "ep1_peephole", paranoia: 2, flags: { looked_peephole: true } },
       { label: "Открыть", next: "ep1_open", paranoia: 3, score: -2, flags: { opened_door: true } },
     ],
@@ -355,7 +489,20 @@ const SCENES = {
     unlock: ["alternate"],
     body:
       "АЛЬТЕРНАТЫ — существа, имитирующие человека.\n\nТИП 1: копирует голос и манеры на расстоянии.\nТИП 2: принимает телесную форму; лицо всегда «чуть мимо».\nТИП 3: полностью замещает жертву в социальном поле.\n\nПРАВИЛА:\n1) Не вступайте в диалог.\n2) Не смотрите в глаза.\n3) Не открывайте дверь.\n4) Если оно знает ваше имя — оно уже выбрало вас.\n\nЕсли вы слышите голос умершего — это не чудо.",
-    next: "faces_cesar",
+    next: "mg_quiz_ep1",
+  },
+
+  mg_quiz_ep1: {
+    type: "minigame",
+    game: "quiz",
+    title: "ПРОВЕРКА APS",
+    channel: "CH-07",
+    text: "Перед сверкой лиц Тэтчер гоняет операторов по протоколу.",
+    questions: 3,
+    nextCorrect: "faces_cesar",
+    nextWrong: "faces_cesar",
+    scoreWin: 1,
+    paranoiaLose: 1,
   },
 
   faces_cesar: {
@@ -427,7 +574,21 @@ const SCENES = {
     unlock: ["adam", "jonah", "dave"],
     body:
       "Спустя время после дела Хитклиффа.\nАдам Мюррей и Джона Маршалл снимают «паранормальное» для своих каналов и для людей вроде Дейва Ли, которые ещё верят, что это можно выложить онлайн и остаться в живых.\n\nОни едут в дом, откуда поступали жалобы.\nПравило, которое они нарушат: не разделяться.",
-    next: "ep2_choose",
+    next: "mg_static_ep2",
+  },
+
+  mg_static_ep2: {
+    type: "minigame",
+    game: "static",
+    title: "РАЦИЯ BYTHORNE",
+    channel: "CH-09",
+    text: "Помехи на частоте. Выцепите человеческие позывные. Не кликайте ловушки LOOK / OPEN / LOVE.",
+    need: 3,
+    lives: 2,
+    nextCorrect: "ep2_choose",
+    nextWrong: "ep2_choose",
+    scoreWin: 1,
+    paranoiaLose: 1,
   },
 
   ep2_choose: {
@@ -764,17 +925,31 @@ const SCENES = {
     choices: [
       {
         label: "Считать Адама скомпрометированным",
-        next: "faces_final",
+        next: "mg_memory_ep3",
         flags: { adam_suspect: true },
         paranoia: 1,
       },
       {
         label: "Считать Адама жертвой, как Марка",
-        next: "faces_final",
+        next: "mg_memory_ep3",
         flags: { adam_victim: true },
         score: 1,
       },
     ],
+  },
+
+  mg_memory_ep3: {
+    type: "minigame",
+    game: "memory",
+    title: "ПАМЯТЬ КАТАЛОГА",
+    channel: "CH-13",
+    text: "Последняя вспышка карточек перед финальной сверкой. Запомните подмену.",
+    flashMs: 2000,
+    nextCorrect: "faces_final",
+    nextWrong: "faces_final",
+    scoreWin: 1,
+    paranoiaLose: 1,
+    stingOnFail: true,
   },
 
   faces_final: {

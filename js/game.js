@@ -123,7 +123,23 @@
     else if (scene.type === "faces") renderFaces(scene);
     else if (scene.type === "catalog") renderCatalog(scene);
     else if (scene.type === "dossier") renderDossier(scene);
+    else if (scene.type === "minigame") renderMinigame(scene);
     else renderStory(scene);
+  }
+
+  function renderMinigame(scene) {
+    MiniGames.render(
+      {
+        go,
+        state,
+        screen,
+        escapeHtml,
+        episodeLabel,
+        updateHud,
+        clampParanoia,
+      },
+      scene
+    );
   }
 
   function renderTitle() {
@@ -139,12 +155,13 @@
         <div class="actions">
           <button class="primary" id="btn-start" type="button">▶ ПОЛНЫЙ СЮЖЕТ</button>
           <button id="btn-episodes" type="button">ЭПИЗОДЫ</button>
+          <button id="btn-arcade" type="button">МИНИ-ИГРЫ</button>
           <button id="btn-catalog" type="button">КАТАЛОГ ЛИЦ</button>
           <button id="btn-mute" type="button">ЗВУК: ВКЛ</button>
         </div>
         <div class="log">
-          Интерактивный пересказ сюжета The Mandela Catalogue (Alex Kister). Неофициальный трибьют.
-          Звуки — оригинальный Web Audio, не дорожки из сериала.
+          Сюжет + мини-игры: не смотри в глаза, голос-подмена, дверь, память каталога, рация, тест APS.
+          Трибьют The Mandela Catalogue. Звуки — Web Audio.
         </div>
       </section>
     `;
@@ -162,6 +179,13 @@
       state.startedAt = Date.now();
       ArchiveAudio.play("tape");
       go("episode_select");
+    };
+
+    document.getElementById("btn-arcade").onclick = async () => {
+      await ArchiveAudio.start();
+      state.startedAt = Date.now();
+      ArchiveAudio.play("emergency");
+      go("arcade");
     };
 
     document.getElementById("btn-catalog").onclick = async () => {
@@ -485,12 +509,14 @@
           <div>Очки выживания: ${state.score}</div>
           <div>Решений: ${state.choicesMade}</div>
           <div>Открыто досье: ${state.unlocked.size}/${CHARACTER_ORDER.length}</div>
+          <div>Мини-игры: ✓${state.flags.minigamesWon || 0} / ✗${state.flags.minigamesLost || 0}</div>
           <div>Ключевые флаги: ${escapeHtml(flagSummary() || "—")}</div>
           <div>Встречены: ${escapeHtml(metNames || "—")}</div>
         </div>
         <div class="actions">
           <button class="primary" id="btn-restart" type="button">ПЕРЕМОТАТЬ КАССЕТУ</button>
           <button id="btn-end-episodes" type="button">ЭПИЗОДЫ</button>
+          <button id="btn-end-arcade" type="button">МИНИ-ИГРЫ</button>
           <button id="btn-end-catalog" type="button">КАТАЛОГ ЛИЦ</button>
           <button id="btn-mute-end" type="button">${ArchiveAudio.muted ? "ЗВУК: ВЫКЛ" : "ЗВУК: ВКЛ"}</button>
         </div>
@@ -523,6 +549,7 @@
     };
 
     document.getElementById("btn-end-episodes").onclick = () => go("episode_select");
+    document.getElementById("btn-end-arcade").onclick = () => go("arcade");
 
     document.getElementById("btn-mute-end").onclick = (e) => {
       const muted = ArchiveAudio.toggleMute();
