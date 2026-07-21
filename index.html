@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>КАТАЛОГ МАНДЕЛЫ — Локальный архив</title>
+  <meta name="description" content="Интерактивный аналоговый хоррор по мотивам ARG «Каталог Манделы»." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Special+Elite&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <div id="crt" class="crt" aria-live="polite">
+    <div class="crt__scanlines" aria-hidden="true"></div>
+    <div class="crt__vignette" aria-hidden="true"></div>
+    <div class="crt__noise" aria-hidden="true"></div>
+    <div class="crt__tracking" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <div class="topbar__brand">
+        <span class="topbar__mark">US</span>
+        <span class="topbar__title">MANDELA COUNTY // АРХИВ 1992</span>
+      </div>
+      <div class="topbar__meta">
+        <span id="tape-time">00:00:00</span>
+        <span id="paranoia" class="paranoia" title="Уровень паранойи">● ● ○ ○ ○</span>
+      </div>
+    </header>
+
+    <main id="screen" class="screen">
+      <!-- Screens injected by game.js -->
+    </main>
+
+    <footer class="statusline">
+      <span id="status-left">REC ●</span>
+      <span id="status-center">НЕ СМОТРИТЕ В ГЛАЗА</span>
+      <span id="status-right">CH-07</span>
+    </footer>
+  </div>
+
+  <div id="flash" class="flash" aria-hidden="true"></div>
+  <div id="glitch-face" class="glitch-face" aria-hidden="true"></div>
+
+  <script src="js/audio.js"></script>
+  <script src="js/effects.js"></script>
+  <script src="js/scenes.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
