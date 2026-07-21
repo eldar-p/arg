@@ -9,6 +9,8 @@ const CHARACTERS = {
     status: "МЁРТВ / ДЕЛО-ОБРАЗЕЦ",
     danger: 4,
     seed: 1101,
+    photo: "assets/portraits/mark_crt.jpg",
+    photoAlt: "assets/portraits/mark_alt.jpg",
     alternate: false,
     quote: "Я хочу проснуться.",
     dossier:
@@ -23,6 +25,8 @@ const CHARACTERS = {
     status: "ИДЕНТИЧНОСТЬ УНИЧТОЖЕНА",
     danger: 5,
     seed: 2202,
+    photo: "assets/portraits/cesar_crt.jpg",
+    photoAlt: "assets/portraits/cesar_alt.jpg",
     alternate: true,
     quote: "Марк… мне нужна помощь. Открой дверь.",
     dossier:
@@ -37,6 +41,8 @@ const CHARACTERS = {
     status: "ВЕДЁТ ВОЙНУ В ОДИНОЧКУ",
     danger: 2,
     seed: 3303,
+    photo: "assets/portraits/thatcher_crt.jpg",
+    photoAlt: "assets/portraits/thatcher_alt.jpg",
     alternate: false,
     quote: "Это уже не «религиозная истерия».",
     dossier:
@@ -51,6 +57,8 @@ const CHARACTERS = {
     status: "СКОМПРОМЕТИРОВАН?",
     danger: 4,
     seed: 4404,
+    photo: "assets/portraits/adam_crt.jpg",
+    photoAlt: "assets/portraits/adam_alt.jpg",
     alternate: false,
     quote: "Ты его видишь?",
     dossier:
@@ -65,6 +73,8 @@ const CHARACTERS = {
     status: "ХОТЕЛ УЙТИ РАНЬШЕ",
     danger: 3,
     seed: 5505,
+    photo: "assets/portraits/jonah_crt.jpg",
+    photoAlt: "assets/portraits/jonah_alt.jpg",
     alternate: false,
     quote: "Нам надо уходить.",
     dossier:
@@ -79,6 +89,8 @@ const CHARACTERS = {
     status: "СОПРОТИВЛЯЕТСЯ ГОЛОСАМ",
     danger: 2,
     seed: 6606,
+    photo: "assets/portraits/sarah_crt.jpg",
+    photoAlt: "assets/portraits/sarah_alt.jpg",
     alternate: false,
     quote: "Брат не стал бы так улыбаться.",
     dossier:
@@ -93,6 +105,8 @@ const CHARACTERS = {
     status: "АРХИВ ВНЕ АРХИВА",
     danger: 2,
     seed: 7707,
+    photo: "assets/portraits/dave_crt.jpg",
+    photoAlt: "assets/portraits/dave_alt.jpg",
     alternate: false,
     quote: "Если ролик просили не смотреть — его уже кто-то посмотрел.",
     dossier:
@@ -107,6 +121,8 @@ const CHARACTERS = {
     status: "ФИКСИРУЕТ ЛИНИЮ 911",
     danger: 2,
     seed: 8808,
+    photo: "assets/portraits/ruth_crt.jpg",
+    photoAlt: "assets/portraits/ruth_alt.jpg",
     alternate: false,
     quote: "Лейтенант, это снова тот же голос.",
     dossier:
@@ -121,6 +137,8 @@ const CHARACTERS = {
     status: "ИСТОЧНИК ПЕРВОЙ ЛЖИ",
     danger: 5,
     seed: 9999,
+    photo: "assets/portraits/gabriel_crt.jpg",
+    photoAlt: "assets/portraits/gabriel_alt.jpg",
     alternate: true,
     quote: "Think of someone you love…",
     dossier:
@@ -135,6 +153,8 @@ const CHARACTERS = {
     status: "АКТИВНАЯ УГРОЗА",
     danger: 5,
     seed: 6666,
+    photo: "assets/portraits/alternate_crt.jpg",
+    photoAlt: "assets/portraits/alternate_alt.jpg",
     alternate: true,
     quote: "Мы можем быть тем, кого ты любишь.",
     dossier:

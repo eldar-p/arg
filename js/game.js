@@ -33,6 +33,24 @@
     });
   }
 
+  function photoFor(ch, asAlternate = false) {
+    if (!ch) return null;
+    if (asAlternate) return ch.photoAlt || ch.photo || null;
+    return ch.photo || null;
+  }
+
+  function paintPortrait(canvas, seed, alternate, ch = null) {
+    const src = ch ? photoFor(ch, !!alternate || !!ch.alternate) : null;
+    // If character is marked alternate in dossier but we want human look in lineup:
+    if (ch && !alternate && ch.alternate) {
+      return Effects.drawPortrait(canvas, seed, false, ch.photo);
+    }
+    if (ch && alternate) {
+      return Effects.drawPortrait(canvas, seed, true, ch.photoAlt || ch.photo);
+    }
+    return Effects.drawPortrait(canvas, seed, !!alternate, src);
+  }
+
   function updateHud(status, channel) {
     clampParanoia();
     const filled = "● ".repeat(state.paranoia).trim();
@@ -171,6 +189,7 @@
 
     document.getElementById("btn-start").onclick = async () => {
       await ArchiveAudio.start();
+      if (typeof Portraits !== "undefined") Portraits.warmup();
       state.startedAt = Date.now();
       state.flags = { run: "full" };
       Effects.glitchBurst(400);
@@ -309,7 +328,7 @@
         </div>
       </section>
     `;
-    Effects.drawPortrait(document.getElementById("dossier-canvas"), ch.seed, ch.alternate);
+    paintPortrait(document.getElementById("dossier-canvas"), ch.seed, !!ch.alternate, ch);
     document.getElementById("btn-next").onclick = () => go(scene.next);
   }
 
@@ -346,7 +365,7 @@
           <em>${escapeHtml(ch.status)}</em>
         </div>
       `;
-      Effects.drawPortrait(card.querySelector("canvas"), ch.seed, ch.alternate);
+      paintPortrait(card.querySelector("canvas"), ch.seed, !!ch.alternate, ch);
       card.onclick = () => {
         if (ch.alternate) {
           ArchiveAudio.play("whisper");
@@ -384,7 +403,7 @@
     document.querySelectorAll(".char-chip canvas").forEach((c) => {
       const id = c.id.replace("chip-", "");
       const ch = CHARACTERS[id];
-      if (ch) Effects.drawPortrait(c, ch.seed, ch.alternate);
+      if (ch) paintPortrait(c, ch.seed, !!ch.alternate, ch);
     });
   }
 
@@ -430,13 +449,12 @@
       const charId = seeds[i];
       const ch = charId ? CHARACTERS[charId] : null;
       const seed = ch ? ch.seed + (hard ? i : i * 3) : hard ? baseSeed + i : baseSeed + i * 97;
-      // force alternate look on the correct pick; others human-ish
-      Effects.drawPortrait(canvas, seed, isAlt || !!(ch && ch.alternate && isAlt));
-      if (!isAlt && ch && ch.alternate) {
-        // show human version of disputed identity
-        Effects.drawPortrait(canvas, seed + 11, false);
+      // Real photos: human CRT grade vs Alternate grade
+      if (ch) {
+        paintPortrait(canvas, seed, isAlt, ch);
+      } else {
+        Effects.drawPortrait(canvas, seed, isAlt);
       }
-      if (isAlt) Effects.drawPortrait(canvas, seed + 77, true);
 
       btn.appendChild(canvas);
       const tag = document.createElement("div");

@@ -505,8 +505,32 @@ button.danger {
 
 .glitch-face__svg {
   width: min(70vw, 320px);
-  filter: contrast(1.4) saturate(0.2);
+  height: auto;
+  filter: contrast(1.45) saturate(0.25) hue-rotate(-10deg);
   animation: faceJitter 0.12s steps(2) infinite;
+  border: 1px solid rgba(255, 77, 77, 0.45);
+}
+
+.glitch-face__photo-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.glitch-face__label {
+  margin-top: 0.6rem;
+  letter-spacing: 0.28em;
+  color: var(--danger);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.face canvas,
+.dossier__art canvas,
+.catalog-card canvas,
+.char-chip canvas {
+  image-rendering: auto;
+  background: #050805;
 }
 
 @keyframes faceJitter {

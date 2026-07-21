@@ -128,7 +128,12 @@ const MiniGames = (() => {
     );
 
     const canvas = document.getElementById("mg-face");
-    Effects.drawPortrait(canvas, scene.seed || 9999, true);
+    const faceSrc =
+      scene.photo ||
+      (typeof Portraits !== "undefined"
+        ? Portraits.pathFor(scene.faceId || "gabriel", true)
+        : null);
+    Effects.drawPortrait(canvas, scene.seed || 9999, true, faceSrc);
     ArchiveAudio.play("angel");
 
     let gaze = 0;
@@ -274,6 +279,8 @@ const MiniGames = (() => {
       const wrap = document.createElement("div");
       wrap.className = "face mg-memory__slot";
       const canvas = document.createElement("canvas");
+      canvas.width = 180;
+      canvas.height = 240;
       Effects.drawPortrait(canvas, base + i * 41, i === altIndex);
       wrap.appendChild(canvas);
       const tag = document.createElement("div");
@@ -299,6 +306,8 @@ const MiniGames = (() => {
         btn.type = "button";
         btn.className = "face";
         const canvas = document.createElement("canvas");
+        canvas.width = 180;
+        canvas.height = 240;
         Effects.drawPortrait(canvas, item.seed, item.alt);
         btn.appendChild(canvas);
         const tag = document.createElement("div");
