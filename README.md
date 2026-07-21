@@ -55,10 +55,10 @@ http://localhost:8080
 
 ## Звук
 
-Оригинальный Web Audio (не дорожки из сериала):
+Royalty-free сэмплы **Mixkit** в `assets/sfx/` (не дорожки из сериала) + лёгкий Web Audio fallback:
 
-- атмосфера: гул, хор, статика, телефон, стук, VHS  
-- **псевдоречь без слов** — формантные «голоса» (human / alternate / angel / whisper)  
-- смех, плач, presence, radio, gibber  
+- фоновые петли: horror ambience / terror drone / room tone  
+- эффекты: стук, дверь, телефон, heartbeat, static, radio, glitch, choir, tape/VHS, alarm  
+- голоса без слов: glitch vocals, creature breath, laugh/cry  
 
-В Arcade есть пункт **«Проба звука: псевдоречь»**.
+Список источников: `assets/sfx/ATTRIBUTION.txt`.
