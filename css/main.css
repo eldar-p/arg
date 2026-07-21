@@ -542,11 +542,11 @@ button.danger {
 .portrait-photo {
   width: 100%;
   height: auto;
-  filter: contrast(1.05) saturate(0.85);
+  filter: none;
 }
 
 .portrait-photo.is-alt {
-  filter: contrast(1.15) saturate(0.55) hue-rotate(-8deg);
+  filter: contrast(1.08) saturate(0.7);
 }
 
 @keyframes faceJitter {

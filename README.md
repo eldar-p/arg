@@ -48,17 +48,14 @@ http://localhost:8080
 
 Провал критичных протоколов = **повтор**, пока не пройдёшь. Сюжетные выборы остаются, но без мини-игры дальше нельзя.
 
-## Портреты
+## Медиа (честно)
 
-Реальные фото (Unsplash, свободная лицензия) в `assets/portraits/` — лёгкая архивная CRT- и Alternate-обработка (пустые глаза, без «цензурных» полос). Пересборка: `python3 scripts/build_portraits.py`.  
-Это **не** кадры/актёры из сериала.
+**Нельзя** класть кадры/OST The Mandela Catalogue — это чужой копирайт. Здесь только легальные замены:
 
-## Звук
+### Портреты
+Реальные фотографии людей с **Unsplash** (`assets/portraits/*_photo.jpg`). Alternate — та же фотобаза с пустыми глазами.  
+Пересборка: `python3 scripts/build_portraits.py` · источники: `assets/portraits/ATTRIBUTION.txt`
 
-Royalty-free сэмплы **Mixkit** в `assets/sfx/` (не дорожки из сериала) + лёгкий Web Audio fallback:
-
-- фоновые петли: horror ambience / terror drone / room tone  
-- эффекты: стук, дверь, телефон, heartbeat, static, radio, glitch, choir, tape/VHS, alarm  
-- голоса без слов: glitch vocals, creature breath, laugh/cry  
-
-Список источников: `assets/sfx/ATTRIBUTION.txt`.
+### Звук
+Полноценные музыкальные дорожки Mixkit Music в `assets/music/` (dark shadows, piano horror, echoes, delirium…) + SFX в `assets/sfx/`.  
+Это **не** саундтрек сериала. Источники: `assets/music/ATTRIBUTION.txt`, `assets/sfx/ATTRIBUTION.txt`.

@@ -1,0 +1,8 @@
+Music beds from Mixkit (https://mixkit.co/license/#musicFree).
+Free under the Mixkit License. NOT audio from The Mandela Catalogue.
+
+bed_dark.mp3 <= mixkit-dark-shadows-64.mp3 (id 64), ~90s excerpt
+bed_piano.mp3 <= mixkit-piano-horror-671.mp3 (id 671), ~90s excerpt
+bed_echoes.mp3 <= mixkit-echoes-188.mp3 (id 188), ~90s excerpt
+bed_delirium.mp3 <= mixkit-delirium-605.mp3 (id 605), ~90s excerpt
+bed_dreams.mp3 <= mixkit-feedback-dreams-588.mp3 (id 588), ~90s excerpt
