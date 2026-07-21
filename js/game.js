@@ -1,4 +1,8 @@
 (() => {
+  const DISCLAIMER_RU =
+    "Это некоммерческий фанатский проект. Все права на франшизу, персонажей и лор принадлежат Алексу Кистеру (Alex Kister). Проект не связан с официальными создателями.";
+  const DISCLAIMER_KEY = "mandela_fan_disclaimer_v1";
+
   const state = {
     scene: "boot",
     paranoia: 0,
@@ -11,6 +15,8 @@
     tapeSeconds: 0,
     unlocked: new Set(),
     met: [],
+    _enterSeq: 0,
+    _appliedEnterSeq: -1,
   };
 
   const screen = () => document.getElementById("screen");
@@ -77,7 +83,8 @@
 
     if (status) statusCenter().textContent = status;
     if (channel) statusRight().textContent = channel;
-    statusLeft().textContent = state.paranoia >= 4 ? "REC ● SIGNAL LOST" : "REC ●";
+    statusLeft().textContent =
+      state.paranoia >= 4 ? "REC ● SIGNAL LOST" : "REC ● FREE";
   }
 
   function applyDelta(choice = {}) {
@@ -112,15 +119,24 @@
     ArchiveAudio.play(name);
   }
 
-  function go(id, choice = null) {
+  function go(id, choice = null, opts = {}) {
     if (choice) {
       state.choicesMade += 1;
       applyDelta(choice);
       ArchiveAudio.blip(520, 0.05, 0.04);
     }
     ArchiveAudio.stopPhone();
+    const same = state.scene === id;
     state.scene = id;
+    if (!opts.skipEnter && !(opts.retry && same)) {
+      state._enterSeq += 1;
+    }
     render();
+  }
+
+  /** Re-draw current scene without re-applying paranoia / enter SFX (minigame retry). */
+  function retryScene() {
+    go(state.scene, null, { retry: true });
   }
 
   function render() {
@@ -140,20 +156,27 @@
       return;
     }
 
-    if (typeof scene.paranoia === "number") {
-      state.paranoia += scene.paranoia;
-      clampParanoia();
+    const freshEnter = state._appliedEnterSeq !== state._enterSeq;
+    if (freshEnter) {
+      state._appliedEnterSeq = state._enterSeq;
+      if (typeof scene.paranoia === "number") {
+        state.paranoia += scene.paranoia;
+        clampParanoia();
+      }
+      if (typeof scene.score === "number") state.score += scene.score;
+      if (scene.flags) {
+        Object.assign(state.flags, scene.flags);
+        if (scene.flags.role) state.role = scene.flags.role;
+      }
+      if (scene.unlock) unlockChars(scene.unlock);
+      if (scene.character) unlockChars([scene.character]);
+      runEnterFx(scene);
+    } else {
+      if (scene.unlock) unlockChars(scene.unlock);
+      if (scene.character) unlockChars([scene.character]);
     }
-    if (typeof scene.score === "number") state.score += scene.score;
-    if (scene.flags) {
-      Object.assign(state.flags, scene.flags);
-      if (scene.flags.role) state.role = scene.flags.role;
-    }
-    if (scene.unlock) unlockChars(scene.unlock);
-    if (scene.character) unlockChars([scene.character]);
 
     updateHud(scene.title || "АРХИВ", scene.channel || "CH-07");
-    runEnterFx(scene);
 
     if (scene.type === "broadcast") renderBroadcast(scene);
     else if (scene.type === "phone") renderPhone(scene);
@@ -166,6 +189,12 @@
   }
 
   function renderOfficial(scene) {
+    if (typeof OfficialMedia === "undefined") {
+      screen().innerHTML = `<section class="panel"><p class="prose">Модуль официальных кассет не загрузился. Обновите страницу.</p>
+        <div class="actions"><button class="primary" id="btn-back-fan" type="button">◀ НАЗАД</button></div></section>`;
+      document.getElementById("btn-back-fan").onclick = () => go(scene.next || "boot");
+      return;
+    }
     updateHud(scene.title || "ОФИЦИАЛЬНЫЕ КАССЕТЫ", scene.channel || "CH-00");
     const activeId = scene.tape || state.flags.officialTape || "vol1";
     const tape = OfficialMedia.byId(activeId) || OfficialMedia.list[0];
@@ -234,6 +263,7 @@
     MiniGames.render(
       {
         go,
+        retryScene,
         state,
         screen,
         escapeHtml,
@@ -244,10 +274,6 @@
       scene
     );
   }
-
-  const DISCLAIMER_KEY = "mandela_fan_disclaimer_v1";
-  const DISCLAIMER_RU =
-    "Это некоммерческий фанатский проект. Все права на франшизу, персонажей и лор принадлежат Алексу Кистеру (Alex Kister). Проект не связан с официальными создателями.";
 
   function disclaimerAccepted() {
     try {

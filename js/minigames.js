@@ -87,7 +87,7 @@ const MiniGames = (() => {
       else Effects.glitchBurst(400);
       if (scene.retryOnFail) {
         if (log) log.textContent = (scene.loseText || "СБОЙ.") + " ПОВТОРИТЕ ПРОТОКОЛ.";
-        setTimeout(() => api.go(api.state.scene), 1100);
+        setTimeout(() => (api.retryScene ? api.retryScene() : api.go(api.state.scene, null, { retry: true })), 1100);
       } else {
         if (log) log.textContent = scene.loseText || "СБОЙ. ЗАПИСЬ ИДЁТ ДАЛЬШЕ — ХУЖЕ.";
         setTimeout(() => api.go(scene.nextWrong || scene.next), 1100);
