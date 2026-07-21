@@ -1,4 +1,4 @@
-/* Photo portrait helpers — real stock faces with CRT / Alternate grades */
+/* Photo portrait helpers — real stock faces with light CRT / Alternate grades */
 const Portraits = (() => {
   const BASE = "assets/portraits/";
   const POOL = ["mark", "cesar", "thatcher", "adam", "jonah", "sarah", "dave", "ruth", "gabriel", "alternate"];
@@ -53,34 +53,22 @@ const Portraits = (() => {
     ctx.drawImage(img, dx, dy, dw, dh);
   }
 
+  /** Photos are pre-graded; only a light live pass for minigame canvases. */
   function grade(ctx, w, h, alternate) {
-    // scanlines
-    ctx.fillStyle = "rgba(0,0,0,0.28)";
+    if (!alternate) {
+      ctx.fillStyle = "rgba(0,0,0,0.08)";
+      for (let y = 0; y < h; y += 4) ctx.fillRect(0, y, w, 1);
+      return;
+    }
+    ctx.fillStyle = "rgba(0,0,0,0.16)";
     for (let y = 0; y < h; y += 3) ctx.fillRect(0, y, w, 1);
-
-    // phosphor wash
-    ctx.fillStyle = alternate ? "rgba(90,20,20,0.18)" : "rgba(40,90,50,0.16)";
+    ctx.fillStyle = "rgba(90,20,20,0.10)";
     ctx.fillRect(0, 0, w, h);
-
-    // vignette
-    const g = ctx.createRadialGradient(w / 2, h * 0.42, h * 0.15, w / 2, h * 0.5, h * 0.75);
+    const g = ctx.createRadialGradient(w / 2, h * 0.42, h * 0.2, w / 2, h * 0.5, h * 0.8);
     g.addColorStop(0, "rgba(0,0,0,0)");
-    g.addColorStop(1, "rgba(0,0,0,0.55)");
+    g.addColorStop(1, "rgba(0,0,0,0.35)");
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, w, h);
-
-    if (alternate) {
-      ctx.strokeStyle = "rgba(255,70,70,0.45)";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(3, 3, w - 6, h - 6);
-      // slight RGB split
-      ctx.globalCompositeOperation = "screen";
-      ctx.fillStyle = "rgba(255,0,0,0.06)";
-      ctx.fillRect(2, 0, w, h);
-      ctx.fillStyle = "rgba(0,255,120,0.04)";
-      ctx.fillRect(-2, 0, w, h);
-      ctx.globalCompositeOperation = "source-over";
-    }
   }
 
   function drawToCanvas(canvas, src, alternate = false) {
@@ -95,8 +83,8 @@ const Portraits = (() => {
     const paint = (img) => {
       ctx.save();
       if (alternate) {
-        ctx.translate(cw * 0.02, 0);
-        ctx.transform(1, 0, 0.04, 1.02, 0, 0);
+        ctx.translate(cw * 0.01, 0);
+        ctx.transform(1, 0, 0.02, 1.01, 0, 0);
       }
       coverDraw(ctx, img, cw, ch);
       ctx.restore();
@@ -119,7 +107,15 @@ const Portraits = (() => {
       });
   }
 
-  /** Prefetch common portraits */
+  /** Set a real <img> to a portrait path (dossier / catalog). */
+  function setImage(el, src) {
+    if (!el || !src) return;
+    el.src = src;
+    el.alt = "archive photo";
+    el.decoding = "async";
+    el.loading = "eager";
+  }
+
   function warmup(ids = POOL) {
     ids.forEach((id) => {
       load(pathFor(id, false)).catch(() => {});
@@ -133,6 +129,7 @@ const Portraits = (() => {
     pathForSeed,
     load,
     drawToCanvas,
+    setImage,
     warmup,
   };
 })();

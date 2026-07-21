@@ -527,10 +527,26 @@ button.danger {
 
 .face canvas,
 .dossier__art canvas,
+.dossier__art .portrait-photo,
 .catalog-card canvas,
-.char-chip canvas {
+.catalog-card .portrait-photo,
+.char-chip canvas,
+.char-chip .portrait-photo {
   image-rendering: auto;
   background: #050805;
+  object-fit: cover;
+  object-position: center 20%;
+  display: block;
+}
+
+.portrait-photo {
+  width: 100%;
+  height: auto;
+  filter: contrast(1.05) saturate(0.85);
+}
+
+.portrait-photo.is-alt {
+  filter: contrast(1.15) saturate(0.55) hue-rotate(-8deg);
 }
 
 @keyframes faceJitter {
@@ -556,7 +572,8 @@ button.danger {
   border-bottom: 1px solid rgba(125, 255, 154, 0.15);
 }
 
-.char-chip canvas {
+.char-chip canvas,
+.char-chip .portrait-photo {
   width: 48px;
   height: 64px;
   border: 1px solid rgba(125, 255, 154, 0.3);
@@ -600,7 +617,8 @@ button.danger {
   width: 100%;
 }
 
-.catalog-card canvas {
+.catalog-card canvas,
+.catalog-card .portrait-photo {
   width: 72px;
   height: 96px;
   flex-shrink: 0;
@@ -649,9 +667,11 @@ button.danger {
   position: relative;
 }
 
-.dossier__art canvas {
+.dossier__art canvas,
+.dossier__art .portrait-photo {
   width: 100%;
   height: auto;
+  aspect-ratio: 3 / 4;
   border: 1px solid rgba(125, 255, 154, 0.3);
   display: block;
 }

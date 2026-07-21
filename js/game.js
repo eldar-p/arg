@@ -51,6 +51,21 @@
     return Effects.drawPortrait(canvas, seed, !!alternate, src);
   }
 
+  /** Real photo element for dossiers / catalog (sharper than canvas redraw). */
+  function setPhotoEl(el, ch, alternate = false) {
+    if (!el || !ch) return;
+    const useAlt = !!alternate;
+    const src =
+      photoFor(ch, useAlt) ||
+      (typeof Portraits !== "undefined" ? Portraits.pathFor(ch.id, useAlt) : null);
+    if (typeof Portraits !== "undefined") Portraits.setImage(el, src);
+    else if (src) {
+      el.src = src;
+      el.alt = ch.nameRu || ch.name || "photo";
+    }
+    el.classList.toggle("is-alt", useAlt);
+  }
+
   function updateHud(status, channel) {
     clampParanoia();
     const filled = "● ".repeat(state.paranoia).trim();
@@ -308,7 +323,7 @@
         <h2 class="scene-title">${escapeHtml(ch.nameRu)}</h2>
         <div class="dossier">
           <div class="dossier__art">
-            <canvas id="dossier-canvas" width="180" height="240"></canvas>
+            <img class="portrait-photo" id="dossier-photo" width="180" height="240" alt="" />
             <div class="dossier__stamp ${ch.alternate ? "dossier__stamp--hot" : ""}">${
               ch.alternate ? "ALTERNATE?" : "HUMAN?"
             }</div>
@@ -328,7 +343,7 @@
         </div>
       </section>
     `;
-    paintPortrait(document.getElementById("dossier-canvas"), ch.seed, !!ch.alternate, ch);
+    setPhotoEl(document.getElementById("dossier-photo"), ch, !!ch.alternate);
     document.getElementById("btn-next").onclick = () => go(scene.next);
   }
 
@@ -358,14 +373,14 @@
       card.type = "button";
       card.className = `catalog-card ${ch.alternate ? "is-alt" : ""}`;
       card.innerHTML = `
-        <canvas width="120" height="160"></canvas>
+        <img class="portrait-photo" width="120" height="160" alt="" />
         <div class="catalog-card__info">
           <strong>${escapeHtml(ch.nameRu)}</strong>
           <span>${escapeHtml(ch.name)}</span>
           <em>${escapeHtml(ch.status)}</em>
         </div>
       `;
-      paintPortrait(card.querySelector("canvas"), ch.seed, !!ch.alternate, ch);
+      setPhotoEl(card.querySelector("img"), ch, !!ch.alternate);
       card.onclick = () => {
         if (ch.alternate) {
           ArchiveAudio.play("whisper");
@@ -390,7 +405,7 @@
   function characterChip(ch) {
     return `
       <div class="char-chip ${ch.alternate ? "is-alt" : ""}">
-        <canvas width="48" height="64" id="chip-${ch.id}"></canvas>
+        <img class="portrait-photo" width="48" height="64" id="chip-${ch.id}" alt="" />
         <div>
           <strong>${escapeHtml(ch.nameRu)}</strong>
           <span>${escapeHtml(ch.role)}</span>
@@ -400,10 +415,10 @@
   }
 
   function paintChips() {
-    document.querySelectorAll(".char-chip canvas").forEach((c) => {
-      const id = c.id.replace("chip-", "");
+    document.querySelectorAll(".char-chip img").forEach((el) => {
+      const id = el.id.replace("chip-", "");
       const ch = CHARACTERS[id];
-      if (ch) paintPortrait(c, ch.seed, !!ch.alternate, ch);
+      if (ch) setPhotoEl(el, ch, !!ch.alternate);
     });
   }
 

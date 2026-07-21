@@ -50,7 +50,7 @@ http://localhost:8080
 
 ## Портреты
 
-Реальные фото (Unsplash, свободная лицензия) в `assets/portraits/` — CRT- и Alternate-обработка.  
+Реальные фото (Unsplash, свободная лицензия) в `assets/portraits/` — лёгкая архивная CRT- и Alternate-обработка (пустые глаза, без «цензурных» полос). Пересборка: `python3 scripts/build_portraits.py`.  
 Это **не** кадры/актёры из сериала.
 
 ## Звук
