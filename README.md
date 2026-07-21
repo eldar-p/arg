@@ -4,27 +4,29 @@
 
 Неофициальный трибьют. Не связан с Alex Kister.
 
-## Играть онлайн (GitHub Pages)
+## Играть онлайн
 
-После одного включения Pages игра будет здесь:
+Репозиторий: https://github.com/eldar-p/arg  
 
-**https://eldar-p.github.io/arg/**
+После включения GitHub Pages сайт будет здесь:
 
-### Включить хостинг (владелец репо, 30 секунд)
+### https://eldar-p.github.io/arg/
 
-1. Открой https://github.com/eldar-p/arg/settings/pages  
-2. **Build and deployment → Source:** выбери **GitHub Actions**  
-3. Сохрани. Workflow `Deploy to GitHub Pages` задеплоится сам (или Actions → Run workflow).
+### Включить хостинг (1 клик, владелец репо)
 
-Либо вариант без Actions: Source → **Deploy from a branch** → `main` → `/ (root)` → Save.
+1. Открой **[Settings → Pages](https://github.com/eldar-p/arg/settings/pages)**  
+2. **Build and deployment → Source** → **Deploy from a branch**  
+3. Branch: **`main`** / folder: **`/ (root)`** → **Save**  
 
-## Локальный запуск
+Через 1–2 минуты игра откроется по ссылке выше.
+
+## Локально
 
 ```bash
 python3 -m http.server 8080
 ```
 
-Открой http://localhost:8080
+http://localhost:8080
 
 ## Сюжет
 

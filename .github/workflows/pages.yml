@@ -1,9 +1,11 @@
+# Optional: use after Pages Source is set to "GitHub Actions".
+# Easier path: Settings → Pages → Deploy from a branch → main → / (root)
 name: Deploy to GitHub Pages
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -16,6 +18,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
