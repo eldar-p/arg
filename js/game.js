@@ -161,7 +161,73 @@
     else if (scene.type === "catalog") renderCatalog(scene);
     else if (scene.type === "dossier") renderDossier(scene);
     else if (scene.type === "minigame") renderMinigame(scene);
+    else if (scene.type === "official") renderOfficial(scene);
     else renderStory(scene);
+  }
+
+  function renderOfficial(scene) {
+    updateHud(scene.title || "ОФИЦИАЛЬНЫЕ КАССЕТЫ", scene.channel || "CH-00");
+    const activeId = scene.tape || state.flags.officialTape || "vol1";
+    const tape = OfficialMedia.byId(activeId) || OfficialMedia.list[0];
+    const cards = OfficialMedia.list
+      .map(
+        (t) => `
+      <button type="button" class="official-card ${t.id === tape.id ? "is-on" : ""}" data-tape="${t.id}">
+        <span class="official-card__ep">${escapeHtml(t.ep)}</span>
+        <strong>${escapeHtml(t.titleRu)}</strong>
+        <small>${escapeHtml(t.note)}</small>
+      </button>`
+      )
+      .join("");
+
+    screen().innerHTML = `
+      <section class="media-deck">
+        <aside class="disclaimer-banner">
+          <strong>OFFICIAL:</strong> Ролики с канала <a href="${OfficialMedia.channelUrl()}" target="_blank" rel="noopener">Alex Kister</a> через YouTube.
+          Файлы сериала не скачиваются и не хранятся на этом сайте.
+        </aside>
+        <p class="kicker">OFFICIAL TAPES // ALEX KISTER</p>
+        <h2 class="scene-title">${escapeHtml(tape.titleRu)}</h2>
+        <div class="official-player">
+          <iframe
+            class="official-player__frame"
+            src="${OfficialMedia.embedUrl(tape.yt)}"
+            title="${escapeHtml(tape.title)}"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+            loading="lazy"
+            referrerpolicy="strict-origin-when-cross-origin"
+          ></iframe>
+        </div>
+        <p class="prose official-meta">
+          ${escapeHtml(tape.title)} ·
+          <a href="${OfficialMedia.watchUrl(tape.yt)}" target="_blank" rel="noopener">открыть на YouTube</a>
+        </p>
+        <div class="official-grid">${cards}</div>
+        <div class="actions">
+          <button class="primary" id="btn-back-fan" type="button">◀ НАЗАД В ФАН-АРХИВ</button>
+          <a class="button-link" href="${OfficialMedia.channelUrl()}" target="_blank" rel="noopener">КАНАЛ ALEX KISTER</a>
+        </div>
+        <div class="log">${DISCLAIMER_RU}</div>
+      </section>
+    `;
+
+    document.querySelectorAll(".official-card").forEach((btn) => {
+      btn.onclick = () => {
+        state.flags.officialTape = btn.dataset.tape;
+        ArchiveAudio.play("tape");
+        SCENES._official_temp = {
+          type: "official",
+          title: "ОФИЦИАЛЬНЫЕ КАССЕТЫ",
+          channel: "CH-00",
+          tape: btn.dataset.tape,
+          next: scene.next || "boot",
+        };
+        go("_official_temp");
+      };
+    });
+
+    document.getElementById("btn-back-fan").onclick = () => go(scene.next || "boot");
   }
 
   function renderMinigame(scene) {
@@ -252,7 +318,8 @@
           </div>
         </div>
         <div class="actions">
-          <button class="primary" id="btn-start" type="button">▶ PLAY FULL TAPE</button>
+          <button class="primary" id="btn-start" type="button">▶ PLAY FAN TAPE</button>
+          <button id="btn-official" type="button">▶ ОФИЦИАЛЬНЫЕ КАССЕТЫ</button>
           <button id="btn-episodes" type="button">ЭПИЗОДЫ</button>
           <button id="btn-catalog" type="button">КАТАЛОГ ЛИЦ</button>
           <button id="btn-mute" type="button">ЗВУК: ВКЛ</button>
@@ -260,7 +327,7 @@
         </div>
         <div class="log">
           Некоммерческий фанатский проект. Все права на франшизу — у Alex Kister.
-          Нет продажи, нет платного доступа, нет коммерческой рекламы.
+          Официальные эпизоды смотрите через YouTube-встройку (без перезаливки файлов).
         </div>
       </section>
     `;
@@ -284,6 +351,14 @@
       Effects.glitchBurst(400);
       ArchiveAudio.play("tape");
       go("ep0_overcast");
+    };
+
+    document.getElementById("btn-official").onclick = async () => {
+      if (!(await ensureOk())) return;
+      state.startedAt = Date.now();
+      state.flags.officialTape = "overthrone";
+      ArchiveAudio.play("tape");
+      go("official_tapes");
     };
 
     document.getElementById("btn-episodes").onclick = async () => {
