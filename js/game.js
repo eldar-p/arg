@@ -9,6 +9,8 @@
     faceStreak: 0,
     startedAt: null,
     tapeSeconds: 0,
+    unlocked: new Set(),
+    met: [],
   };
 
   const screen = () => document.getElementById("screen");
@@ -20,6 +22,15 @@
 
   function clampParanoia() {
     state.paranoia = Math.max(0, Math.min(5, state.paranoia));
+  }
+
+  function unlockChars(ids = []) {
+    ids.forEach((id) => {
+      if (CHARACTERS[id] && !state.unlocked.has(id)) {
+        state.unlocked.add(id);
+        state.met.push(id);
+      }
+    });
   }
 
   function updateHud(status, channel) {
@@ -44,20 +55,28 @@
     clampParanoia();
   }
 
-  async function runEnterFx(name) {
+  function runEnterFx(scene) {
+    const name = scene.onEnter || scene.sound;
     if (!name) return;
-    if (name === "phone") {
-      ArchiveAudio.phoneRing(2);
-      Effects.glitchBurst(350);
-    } else if (name === "glitch") {
+    if (name === "beepOk") {
+      ArchiveAudio.beepOk();
+      return;
+    }
+    if (name === "face" || name === "sting") {
+      Effects.showAlternateFace(name === "face" ? 1000 : 850);
+      if (name === "sting") ArchiveAudio.play("sting");
+      else ArchiveAudio.play("face");
+      return;
+    }
+    if (name === "glitch") {
       Effects.glitchBurst(600);
       Effects.shake(350, 5);
-      ArchiveAudio.blip(140, 0.2, 0.05);
-    } else if (name === "sting") {
-      Effects.showAlternateFace(850);
-    } else if (name === "face") {
-      Effects.showAlternateFace(1000);
+    } else if (name === "phone") {
+      Effects.glitchBurst(350);
+    } else if (name === "gabriel" || name === "think" || name === "choir") {
+      Effects.glitchBurst(500);
     }
+    ArchiveAudio.play(name);
   }
 
   function go(id, choice = null) {
@@ -66,6 +85,7 @@
       applyDelta(choice);
       ArchiveAudio.blip(520, 0.05, 0.04);
     }
+    ArchiveAudio.stopPhone();
     state.scene = id;
     render();
   }
@@ -92,13 +112,17 @@
       clampParanoia();
     }
     if (typeof scene.score === "number") state.score += scene.score;
+    if (scene.unlock) unlockChars(scene.unlock);
+    if (scene.character) unlockChars([scene.character]);
 
     updateHud(scene.title || "АРХИВ", scene.channel || "CH-07");
-    runEnterFx(scene.onEnter);
+    runEnterFx(scene);
 
     if (scene.type === "broadcast") renderBroadcast(scene);
     else if (scene.type === "phone") renderPhone(scene);
     else if (scene.type === "faces") renderFaces(scene);
+    else if (scene.type === "catalog") renderCatalog(scene);
+    else if (scene.type === "dossier") renderDossier(scene);
     else renderStory(scene);
   }
 
@@ -109,16 +133,17 @@
         <p class="kicker">Analog Horror Interactive // Tribute</p>
         <h1 class="hero-brand"><span>MANDELA COUNTY</span>КАТАЛОГ<br/>МАНДЕЛЫ</h1>
         <p class="lead">
-          Локальный архив экстренных плёнок. Альтернаты говорят голосами тех, кого вы любите.
-          Не смотрите в глаза. Не открывайте дверь. Не будьте уверены, что вы — это вы.
+          Локальный архив экстренных плёнок. Марк, Сезар, Тэтчер, «Гавриил» —
+          голоса и лица, которым нельзя верить.
         </p>
         <div class="actions">
           <button class="primary" id="btn-start" type="button">▶ ВОСПРОИЗВЕСТИ</button>
+          <button id="btn-catalog" type="button">КАТАЛОГ ЛИЦ</button>
           <button id="btn-mute" type="button">ЗВУК: ВКЛ</button>
         </div>
         <div class="log">
-          Предупреждение: вспышки, резкий звук, психологический хоррор.
-          Игра вдохновлена ARG «The Mandela Catalogue» (Alex Kister) и является неофициальным трибьютом.
+          Звуки синтезированы в браузере (хор, стук, шёпот, телефон, EAS) — это не аудиодорожки из сериала.
+          Персонажи — трибьют по мотивам The Mandela Catalogue (Alex Kister).
         </div>
       </section>
     `;
@@ -128,6 +153,13 @@
       state.startedAt = Date.now();
       Effects.glitchBurst(400);
       go("intro_tape");
+    };
+
+    document.getElementById("btn-catalog").onclick = async () => {
+      await ArchiveAudio.start();
+      unlockChars(CHARACTER_ORDER);
+      ArchiveAudio.play("tape");
+      go("catalog_full");
     };
 
     const muteBtn = document.getElementById("btn-mute");
@@ -155,30 +187,36 @@
         </div>
       </section>
     `;
-    const body = document.getElementById("broadcast-body");
-    Effects.typeText(body, scene.body, 55);
+    Effects.typeText(document.getElementById("broadcast-body"), scene.body, 55);
     document.getElementById("btn-next").onclick = () => go(scene.next);
   }
 
   function renderStory(scene) {
+    const char = scene.character ? CHARACTERS[scene.character] : null;
     screen().innerHTML = `
       <section class="panel">
-        <p class="kicker">${state.role ? `РОЛЬ: ${roleLabel(state.role)}` : "ЗАПИСЬ"}</p>
+        <p class="kicker">${state.role ? `РОЛЬ: ${roleLabel(state.role)}` : "ЗАПИСЬ"}${
+          char ? ` // ${escapeHtml(char.nameRu)}` : ""
+        }</p>
         <h2 class="scene-title">${escapeHtml(scene.title)}</h2>
         <div class="meter" aria-hidden="true">${meterHtml()}</div>
+        ${char ? characterChip(char) : ""}
         <p class="prose" id="story-text"></p>
         <div class="choices" id="choices"></div>
       </section>
     `;
     Effects.typeText(document.getElementById("story-text"), scene.text, 64);
     mountChoices(scene.choices || []);
+    paintChips();
   }
 
   function renderPhone(scene) {
+    const char = scene.character ? CHARACTERS[scene.character] : null;
     screen().innerHTML = `
       <section class="panel">
-        <p class="kicker">Входящий сигнал</p>
+        <p class="kicker">Входящий сигнал${char ? ` // ${escapeHtml(char.name)}` : ""}</p>
         <h2 class="scene-title">${escapeHtml(scene.title || "ЗВОНОК")}</h2>
+        ${char ? characterChip(char) : ""}
         <div class="phone">
           <div class="phone__from">${escapeHtml(scene.from)}</div>
           <div class="phone__line">«${escapeHtml(scene.line)}»</div>
@@ -189,10 +227,126 @@
     `;
     Effects.typeText(document.getElementById("story-text"), scene.text, 64);
     mountChoices(scene.choices || []);
+    paintChips();
+  }
+
+  function renderDossier(scene) {
+    const ch = CHARACTERS[scene.character];
+    if (!ch) {
+      go(scene.next);
+      return;
+    }
+    unlockChars([ch.id]);
+    updateHud(`ДОСЬЕ // ${ch.name}`, "CH-12");
+
+    screen().innerHTML = `
+      <section class="panel">
+        <p class="kicker">Mandela County Archive // Dossier</p>
+        <h2 class="scene-title">${escapeHtml(ch.nameRu)}</h2>
+        <div class="dossier">
+          <div class="dossier__art">
+            <canvas id="dossier-canvas" width="180" height="240"></canvas>
+            <div class="dossier__stamp ${ch.alternate ? "dossier__stamp--hot" : ""}">${
+              ch.alternate ? "ALTERNATE?" : "HUMAN?"
+            }</div>
+          </div>
+          <div class="dossier__body">
+            <div class="dossier__name">${escapeHtml(ch.name)}</div>
+            <div class="dossier__meta">${escapeHtml(ch.role)}</div>
+            <div class="dossier__status">Статус: ${escapeHtml(ch.status)}</div>
+            <div class="dossier__danger">Угроза: ${"▲".repeat(ch.danger)}${"△".repeat(5 - ch.danger)}</div>
+            <p class="dossier__quote">«${escapeHtml(ch.quote)}»</p>
+            <p class="prose">${escapeHtml(ch.dossier)}</p>
+            <div class="tags">${ch.tags.map((t) => `<span>${escapeHtml(t)}</span>`).join("")}</div>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="primary" id="btn-next" type="button">ВЕРНУТЬСЯ К ЗАПИСИ ▶</button>
+        </div>
+      </section>
+    `;
+    Effects.drawPortrait(document.getElementById("dossier-canvas"), ch.seed, ch.alternate);
+    document.getElementById("btn-next").onclick = () => go(scene.next);
+  }
+
+  function renderCatalog(scene) {
+    if (scene.unlock) unlockChars(scene.unlock);
+    if (scene.showAll) unlockChars(CHARACTER_ORDER);
+
+    const list = CHARACTER_ORDER.filter((id) => state.unlocked.has(id) || scene.showAll);
+    const returnId =
+      Object.keys(SCENES).find((k) => SCENES[k] === scene) || "catalog_full";
+    updateHud(scene.title || "КАТАЛОГ", "CH-12");
+
+    screen().innerHTML = `
+      <section class="panel">
+        <p class="kicker">Каталог лиц // ${list.length} карточек</p>
+        <h2 class="scene-title">${escapeHtml(scene.title)}</h2>
+        <p class="prose">${escapeHtml(scene.text || "")}</p>
+        <div class="catalog" id="catalog"></div>
+        <div class="choices" id="choices"></div>
+      </section>
+    `;
+
+    const box = document.getElementById("catalog");
+    list.forEach((id) => {
+      const ch = CHARACTERS[id];
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = `catalog-card ${ch.alternate ? "is-alt" : ""}`;
+      card.innerHTML = `
+        <canvas width="120" height="160"></canvas>
+        <div class="catalog-card__info">
+          <strong>${escapeHtml(ch.nameRu)}</strong>
+          <span>${escapeHtml(ch.name)}</span>
+          <em>${escapeHtml(ch.status)}</em>
+        </div>
+      `;
+      Effects.drawPortrait(card.querySelector("canvas"), ch.seed, ch.alternate);
+      card.onclick = () => {
+        if (ch.alternate) {
+          ArchiveAudio.play("whisper");
+          ArchiveAudio.blip(180, 0.1, 0.05);
+        } else {
+          ArchiveAudio.beepOk();
+        }
+        SCENES._dossier_temp = {
+          type: "dossier",
+          character: id,
+          sound: ch.alternate ? "gabriel" : "tape",
+          next: returnId,
+        };
+        go("_dossier_temp");
+      };
+      box.appendChild(card);
+    });
+
+    mountChoices(scene.choices || [{ label: "Продолжить ▶", next: scene.next || "choose_role" }]);
+  }
+
+  function characterChip(ch) {
+    return `
+      <div class="char-chip ${ch.alternate ? "is-alt" : ""}">
+        <canvas width="48" height="64" id="chip-${ch.id}"></canvas>
+        <div>
+          <strong>${escapeHtml(ch.nameRu)}</strong>
+          <span>${escapeHtml(ch.role)}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function paintChips() {
+    document.querySelectorAll(".char-chip canvas").forEach((c) => {
+      const id = c.id.replace("chip-", "");
+      const ch = CHARACTERS[id];
+      if (ch) Effects.drawPortrait(c, ch.seed, ch.alternate);
+    });
   }
 
   function mountChoices(choices) {
     const box = document.getElementById("choices");
+    if (!box) return;
     box.innerHTML = "";
     choices.forEach((c, i) => {
       const btn = document.createElement("button");
@@ -200,17 +354,16 @@
       btn.type = "button";
       btn.innerHTML = `${escapeHtml(c.label)}${c.hint ? `<small>${escapeHtml(c.hint)}</small>` : ""}`;
       btn.style.animationDelay = `${i * 0.05}s`;
-      btn.onclick = () => {
-        ArchiveAudio.stopPhone();
-        go(c.next, c);
-      };
+      btn.onclick = () => go(c.next, c);
       box.appendChild(btn);
     });
+    paintChips();
   }
 
   function renderFaces(scene) {
     const hard = !!scene.hard;
     const alternateIndex = Math.floor(Math.random() * 3);
+    const seeds = scene.characterSeeds || [];
     const baseSeed = (Date.now() % 100000) + state.choicesMade * 17;
 
     screen().innerHTML = `
@@ -228,28 +381,32 @@
       const btn = document.createElement("button");
       btn.className = "face";
       btn.type = "button";
-      btn.setAttribute("aria-label", `Портрет ${i + 1}`);
       const canvas = document.createElement("canvas");
       const isAlt = i === alternateIndex;
-      // hard mode: closer seeds so normals look alike, alt still warped
-      const seed = hard ? baseSeed + i : baseSeed + i * 97;
-      Effects.drawPortrait(canvas, seed, isAlt);
-      if (hard && isAlt) {
-        // subtler mark already in draw; add slight extra noise via redraw with same flag
+      const charId = seeds[i];
+      const ch = charId ? CHARACTERS[charId] : null;
+      const seed = ch ? ch.seed + (hard ? i : i * 3) : hard ? baseSeed + i : baseSeed + i * 97;
+      // force alternate look on the correct pick; others human-ish
+      Effects.drawPortrait(canvas, seed, isAlt || !!(ch && ch.alternate && isAlt));
+      if (!isAlt && ch && ch.alternate) {
+        // show human version of disputed identity
+        Effects.drawPortrait(canvas, seed + 11, false);
       }
+      if (isAlt) Effects.drawPortrait(canvas, seed + 77, true);
+
       btn.appendChild(canvas);
       const tag = document.createElement("div");
       tag.className = "face__tag";
-      tag.textContent = `SUBJECT ${String.fromCharCode(65 + i)}`;
+      tag.textContent = ch ? ch.name.toUpperCase().slice(0, 18) : `SUBJECT ${String.fromCharCode(65 + i)}`;
       btn.appendChild(tag);
       btn.onclick = () => onFacePick(isAlt, scene, btn);
       faces.appendChild(btn);
+      if (ch) unlockChars([ch.id]);
     }
   }
 
   function onFacePick(correct, scene, btn) {
-    const faces = [...document.querySelectorAll(".face")];
-    faces.forEach((f) => (f.disabled = true));
+    [...document.querySelectorAll(".face")].forEach((f) => (f.disabled = true));
     const log = document.getElementById("face-log");
 
     if (correct) {
@@ -280,10 +437,18 @@
     Effects.setDanger(ending.bad);
     if (ending.bad) {
       Effects.glitchBurst(800);
-      ArchiveAudio.sting();
+      ArchiveAudio.play("gabriel");
+      setTimeout(() => ArchiveAudio.play("sting"), 400);
     } else {
       ArchiveAudio.beepOk();
+      ArchiveAudio.play("tape");
     }
+
+    const metNames = state.met
+      .map((id) => CHARACTERS[id]?.nameRu)
+      .filter(Boolean)
+      .slice(0, 8)
+      .join(", ");
 
     screen().innerHTML = `
       <section class="panel ending">
@@ -295,15 +460,16 @@
           <div>Паранойя: ${state.paranoia}/5</div>
           <div>Очки выживания: ${state.score}</div>
           <div>Решений: ${state.choicesMade}</div>
-          <div>Серия верных лиц: ${state.faceStreak}</div>
+          <div>Открыто досье: ${state.unlocked.size}/${CHARACTER_ORDER.length}</div>
+          <div>Встречены: ${escapeHtml(metNames || "—")}</div>
         </div>
         <div class="actions">
           <button class="primary" id="btn-restart" type="button">ПЕРЕМОТАТЬ КАССЕТУ</button>
+          <button id="btn-end-catalog" type="button">КАТАЛОГ ЛИЦ</button>
           <button id="btn-mute-end" type="button">${ArchiveAudio.muted ? "ЗВУК: ВЫКЛ" : "ЗВУК: ВКЛ"}</button>
         </div>
         <div class="log">
-          Неофициальный трибьют по мотивам The Mandela Catalogue.
-          Не открывайте дверь голосам, которых не должно быть дома.
+          Звуки оригинальные (Web Audio). Персонажи — неофициальный трибьют Mandela Catalogue.
         </div>
       </section>
     `;
@@ -318,9 +484,16 @@
         choicesMade: 0,
         faceStreak: 0,
         startedAt: null,
+        unlocked: new Set(),
+        met: [],
       });
       Effects.setDanger(false);
       render();
+    };
+
+    document.getElementById("btn-end-catalog").onclick = () => {
+      unlockChars(CHARACTER_ORDER);
+      go("catalog_full");
     };
 
     document.getElementById("btn-mute-end").onclick = (e) => {
@@ -339,7 +512,7 @@
         code: "ENDING // REPLACED",
         title: "ВЫ БОЛЬШЕ НЕ ОДНИ",
         text:
-          "Утром соседи скажут, что вы вышли поздороваться.\nГолос будет ваш. Улыбка — почти.\nВ каталоге появится новая карточка: ваше имя, чужие глаза.",
+          "Утром соседи скажут, что вы вышли поздороваться.\nГолос будет ваш. Улыбка — почти как у Сезара на второй карточке.\nВ каталоге новая запись: ваше имя, чужие глаза.",
       };
     }
 
@@ -349,7 +522,7 @@
         code: "ENDING // CONTAINED",
         title: "ДОЖИТЬ ДО СМЕНЫ",
         text:
-          "Вы не смотрели слишком долго.\nНе отвечали слишком охотно.\nКассета останавливается на кадре инструкции APS — и на этот раз инструкция совпадает с тем, что вы сделали.\nЭто не победа. Это отсрочка.",
+          "Тэтчер Дэвис не звонит с благодарностью — только короткий тон на линии.\nКассета останавливается на инструкции APS.\nЭто не победа. Это отсрочка.",
       };
     }
 
@@ -359,7 +532,7 @@
         code: "ENDING // ARCHIVIST",
         title: "КАТАЛОГ ДЕРЖИТСЯ",
         text:
-          "Партии размечены верно.\nКто-то в темноте стеллажа так и не получил ваше лицо.\nВы гасите монитор. В отражении гаснете не сразу.",
+          "Папки Мюррея и Маршалла закрыты.\n«Гавриил» не получил ваш взгляд дольше секунды.\nМонитор гаснет. Отражение — с задержкой.",
       };
     }
 
@@ -369,7 +542,7 @@
         code: "ENDING // THRESHOLD",
         title: "ОНИ ЗНАЛИ КОД",
         text:
-          "На кухне стоит вторая кружка.\nПар ещё идёт.\nКто-то напевает ту же мелодию, что и вы в детстве — чуть медленнее.",
+          "На кухне вторая кружка.\nКто-то напевает ту же мелодию, что в образовательной плёнке — чуть медленнее.\nThink of someone you love.",
       };
     }
 
@@ -379,8 +552,8 @@
       title: p >= 3 ? "СИГНАЛ РАЗДВОИЛСЯ" : "ШУМ НА ЛЕНТЕ",
       text:
         p >= 3
-          ? "Вы живы. Наверное.\nВ каждой следующей записи ваш голос звучит на полтона ниже.\nАрхив помечает файл как «требует повторной сверки»."
-          : "Помехи съедают финал.\nНа этикетке кассеты чьей-то рукой дописано: «не перематывать в одиночестве».\nВы выключаете телевизор. Седьмой канал ещё секунду светится в темноте.",
+          ? "Вы живы. Наверное.\nГолос в следующей записи ниже на полтона — как у Марка в последнем звонке.\nФайл: повторная сверка."
+          : "Помехи съедают финал.\nНа этикетке: «не перематывать в одиночестве».\nСедьмой канал ещё секунду светится.",
     };
   }
 
@@ -418,16 +591,15 @@
     tapeTime().textContent = `${h}:${m}:${s}`;
   }
 
-  // occasional ambient glitches while playing
   setInterval(() => {
     if (state.scene === "boot") return;
     if (Math.random() < 0.08 + state.paranoia * 0.03) {
       Effects.glitchBurst(180 + Math.random() * 220);
-      if (state.paranoia >= 3 && Math.random() < 0.25) {
-        ArchiveAudio.blip(90 + Math.random() * 40, 0.15, 0.03);
+      if (state.paranoia >= 3 && Math.random() < 0.2) {
+        ArchiveAudio.play(Math.random() < 0.5 ? "whisper" : "static");
       }
     }
-  }, 4000);
+  }, 5000);
 
   setInterval(tickTape, 1000);
   render();
