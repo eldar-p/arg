@@ -51,5 +51,5 @@ http://localhost:8080
 
 ### Фан-адаптация
 - Видео / музыка / SFX — Mixkit (`assets/video`, `assets/music`, `assets/sfx`)  
-- Портреты — Unsplash (`assets/portraits`)  
+- Портреты — **фан-арт** analog-horror (`assets/portraits/*_photo.jpg`), не сток-фото  
 - Атрибуции: `assets/*/ATTRIBUTION.txt`

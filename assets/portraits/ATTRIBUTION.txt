@@ -1,15 +1,7 @@
-REAL photographic portraits from Unsplash (https://unsplash.com/license).
-Free to use. NOT likenesses / screenshots / cast of The Mandela Catalogue.
-Human files keep natural photo look; Alternate adds void-eye grade only.
+Character portraits: original fan-art style illustrations created for this
+non-commercial fan project (analog-horror digital art).
 
-Sources:
-  mark: https://images.unsplash.com/photo-1500648767791-00dcc994a43e
-  cesar: https://images.unsplash.com/photo-1506794778202-cad84cf45f1d
-  thatcher: https://images.unsplash.com/photo-1472099645785-5658abf4ff4e
-  adam: https://images.unsplash.com/photo-1519085360753-af0119f7cbe7
-  jonah: https://images.unsplash.com/photo-1539571696357-5a69c17a67c6
-  sarah: https://images.unsplash.com/photo-1544005313-94ddf0286df2
-  dave: https://images.unsplash.com/photo-1492562080023-ab3db95bfbce
-  ruth: https://images.unsplash.com/photo-1573496359142-b8d87734a5a2
-  gabriel: https://images.unsplash.com/photo-1534528741775-53994a69daeb
-  alternate: https://images.unsplash.com/photo-1521119989659-a83eee488004
+Inspired by The Mandela Catalogue (franchise © Alex Kister).
+Not official series art. Not Unsplash / random stock photo models.
+
+Files used by the game: *_photo.jpg (human/fanart) and *_alt.jpg (Alternate grade).
